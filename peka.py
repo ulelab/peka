@@ -1229,4 +1229,4 @@ if __name__ == '__main__':
     repeats = sys.argv[14]
 
     run(peak_file_path, sites_file_path, genome_path, genome_fai_path, regions_file_path, window, window_distal, kmer_length_input, 
-        output_path, top_n, percentile, clusters, smoothing, all_outputs=True, regions=None, subsample=True, repeats='unmasked')
+        output_path, top_n, percentile, clusters, smoothing, repeats, all_outputs=True, regions=None, subsample=True)
