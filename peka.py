@@ -81,6 +81,7 @@ from plumbum.cmd import sort, zcat
 from sklearn.cluster import AffinityPropagation
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.utils.testing import ignore_warnings
+import argparse
 
 
 REGIONS = ["whole_gene", "intron", "UTR3", "other_exon", "UTR5", "ncRNA", "intergenic", "genome"]
@@ -97,6 +98,73 @@ REGION_SITES = {
 REGIONS_QUANTILE = ["intron", "intergenic", "cds_utr_ncrna"]
 REGIONS_MAP = {}
 TEMP_PATH = None
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Search for enriched motifs around thresholded crosslinks in CLIP data.')
+    optional = parser._action_groups.pop()
+    required = parser.add_argument_group('required arguments')
+    required.add_argument('-i',"--inputpeaks", type=str, required=True,
+                        help='CLIP peaks (intervals of crosslinks) in BED file format')
+    required.add_argument('-x',"--inputxlsites", type=str, required=True,
+                        help='CLIP crosslinks in BED file format')
+    required.add_argument('-g',"--genomefasta", type=str, required=True,
+                        help='genome fasta file, ideally the same as was used for read alignment')
+    required.add_argument('-gi',"--genomeindex", type=str, required=True,
+                        help='genome fasta index file (.fai)')
+    required.add_argument('-r',"--regions", type=str, required=True,
+                        help='genome segmentation file produced as output of "iCount segment" function')
+
+    optional.add_argument('-k',"--kmerlength", choices=[3,4,5,6,7], default=4, nargs='?',
+                        help='kmer length [DEFAULT 4]')
+    optional.add_argument('-o',"--outputpath", type=str, default=".", nargs='?',
+                        help='output folder [DEFAULT current directory]')
+    optional.add_argument('-w',"--window", type=int, default=25, nargs='?',
+                        help='window around thresholded crosslinks for finding enriched kmers [DEFAULT 25]')
+    optional.add_argument('-dw',"--distalwindow", type=int, default=150, nargs='?',
+                        help='window around enriched kmers to calculate distribution [DEFAULT 150]')
+    optional.add_argument('-t',"--topn", type=int, default=20, nargs='?',
+                        help='number of kmers ranked by z-score in descending order for clustering and plotting [DEFAULT 20]')
+    optional.add_argument('-p',"--percentile", type=float, default=0.7, nargs='?',
+                        help='percentile for considering thresholded crosslinks eg. percentile 0.7 means \n \
+                            that the top 70 percent of crosslinks will be considered thresholded [DEFAULT 0.7]')
+    optional.add_argument('-c',"--clusters", type=int, default=5, nargs='?',
+                        help='how many enriched kmers to cluster and plot [DEFAULT 5]')
+    optional.add_argument('-s',"--smoothing", type=int, default=6, nargs='?',
+                        help='window used for smoothing kmer positional distribution curves [DEFAULT 6]')
+    optional.add_argument('-re',"--repeats", choices=['masked', 'unmasked', 'repeats_only'], default='unmasked', nargs='?',
+                        help='how to treat repeating regions within genome (options: "masked", "unmasked", \n \
+                            "repeats_only"). When applying any of the options with the exception of \n \
+                                repeats == "unmasked", a genome with soft-masked repeat sequences should be \n \
+                                    used for input, ie. repeats in lowercase letters.')
+    optional.add_argument('-a',"--alloutputs", type=bool, default=True, nargs='?',
+                        help='window used for smoothing kmer positional distribution curves [DEFAULT True]')
+    optional.add_argument('-sr',"--specificregion", choices=["whole_gene", "intron", "UTR3", "other_exon", "UTR5", "ncRNA", "intergenic", "genome"], default=None, nargs='?',
+                        help='choose to run PEKA on a specific region only [DEFAULT None]')
+    optional.add_argument('-sub',"--subsample", type=bool, default=True, nargs='?',
+                        help='window used for smoothing kmer positional distribution curves [DEFAULT True]')
+
+    parser._action_groups.append(optional)
+    args = parser.parse_args()
+    print(args)
+
+    return(args.inputpeaks, 
+        args.inputxlsites, 
+        args.genomefasta, 
+        args.genomeindex, 
+        args.regions, 
+        args.kmerlength,
+        args.outputpath,
+        args.window,
+        args.distalwindow,
+        args.topn,
+        args.percentile,
+        args.clusters,
+        args.smoothing,
+        args.repeats,
+        arg.alloutputs,
+        arg.specificregions,
+        arg.subsample)
 
 
 # overriding pybedtools to_dataframe method to avoid warning
@@ -1211,22 +1279,8 @@ def run(
 
 if __name__ == '__main__':
 
+    peak_file_path, sites_file_path, genome_path, genome_fai_path, regions_file_path, window, window_distal, kmer_length_input, \
+    output_path, top_n, percentile, clusters, smoothing, repeats, all_outputs, regions, subsample = main()
 
-    peak_file_path = sys.argv[1]
-    sites_file_path = sys.argv[2]
-    genome_path = sys.argv[3]
-    genome_fai_path = sys.argv[4]
-    regions_file_path = sys.argv[5]
-    kmer_length_input = int(sys.argv[6])
-    output_path = sys.argv[7]
-
-    window = int(sys.argv[8]) # window around significant crosslinks for finding enriched kmers default 25
-    window_distal = int(sys.argv[9]) # window around most enriched kmers for positional kmer distribution default 150
-    top_n = int(sys.argv[10]) # how many most enriched kmers we are considering default 20
-    percentile = int(sys.argv[11]) # default 0.7
-    clusters = int(sys.argv[12]) # default 5
-    smoothing = int(sys.argv[13]) # default 6
-    repeats = sys.argv[14]
-
-    run(peak_file_path, sites_file_path, genome_path, genome_fai_path, regions_file_path, window, window_distal, kmer_length_input, 
-        output_path, top_n, percentile, clusters, smoothing, repeats, all_outputs=True, regions=None, subsample=True)
+    run(peak_file_path, sites_file_path, genome_path, genome_fai_path, regions_file_path, window, window_distal, kmer_length_input, \
+        output_path, top_n, percentile, clusters, smoothing, repeats, all_outputs, regions, subsample)
