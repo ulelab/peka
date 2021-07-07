@@ -64,5 +64,5 @@ optional arguments:
   -sr [{whole_gene,intron,UTR3,other_exon,UTR5,ncRNA,intergenic,genome}], --specificregion [{whole_gene,intron,UTR3,other_exon,UTR5,ncRNA,intergenic,genome}]
                         choose to run PEKA on a specific region only [DEFAULT None]
   -sub [SUBSAMPLE], --subsample [SUBSAMPLE]
-                        window used for smoothing kmer positional distribution curves [DEFAULT True]
+                        if the crosslinks file is very large, they can be subsampled to reduce runtime [DEFAULT True]
 ```

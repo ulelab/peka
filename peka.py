@@ -142,7 +142,7 @@ def main():
     optional.add_argument('-sr',"--specificregion", choices=["whole_gene", "intron", "UTR3", "other_exon", "UTR5", "ncRNA", "intergenic", "genome"], default=None, nargs='?',
                         help='choose to run PEKA on a specific region only [DEFAULT None]')
     optional.add_argument('-sub',"--subsample", type=bool, default=True, nargs='?',
-                        help='window used for smoothing kmer positional distribution curves [DEFAULT True]')
+                        help='if the crosslinks file is very large, they can be subsampled to reduce runtime [DEFAULT True]')
 
     parser._action_groups.append(optional)
     args = parser.parse_args()
