@@ -138,11 +138,11 @@ def main():
                                 repeats == "unmasked", a genome with soft-masked repeat sequences should be \n \
                                     used for input, ie. repeats in lowercase letters.')
     optional.add_argument('-a',"--alloutputs", type=bool, default=True, nargs='?',
-                        help='window used for smoothing kmer positional distribution curves [DEFAULT True]')
+                        help='controls the number of outputs, can be True/False [DEFAULT True]')
     optional.add_argument('-sr',"--specificregion", choices=["whole_gene", "intron", "UTR3", "other_exon", "UTR5", "ncRNA", "intergenic", "genome"], default=None, nargs='?',
                         help='choose to run PEKA on a specific region only [DEFAULT None]')
     optional.add_argument('-sub',"--subsample", type=bool, default=True, nargs='?',
-                        help='if the crosslinks file is very large, they can be subsampled to reduce runtime [DEFAULT True]')
+                        help='if the crosslinks file is very large, they can be subsampled to reduce runtime, can be True/False [DEFAULT True]')
 
     parser._action_groups.append(optional)
     args = parser.parse_args()

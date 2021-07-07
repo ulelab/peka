@@ -60,9 +60,9 @@ optional arguments:
                         how to treat repeating regions within genome (options: "masked", "unmasked", "repeats_only"). When applying any of the options with the exception of repeats == "unmasked", a genome with soft-masked
                         repeat sequences should be used for input, ie. repeats in lowercase letters.
   -a [ALLOUTPUTS], --alloutputs [ALLOUTPUTS]
-                        window used for smoothing kmer positional distribution curves [DEFAULT True]
+                        controls the number of outputs, can be True/False [DEFAULT True]
   -sr [{whole_gene,intron,UTR3,other_exon,UTR5,ncRNA,intergenic,genome}], --specificregion [{whole_gene,intron,UTR3,other_exon,UTR5,ncRNA,intergenic,genome}]
                         choose to run PEKA on a specific region only [DEFAULT None]
   -sub [SUBSAMPLE], --subsample [SUBSAMPLE]
-                        if the crosslinks file is very large, they can be subsampled to reduce runtime [DEFAULT True]
+                        if the crosslinks file is very large, they can be subsampled to reduce runtime, can be True/False [DEFAULT True]
 ```
