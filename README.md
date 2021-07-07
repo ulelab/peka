@@ -20,7 +20,7 @@ pandas=0.24.2
 textdistance=4.1.3
 ```
 **Usage**:
-
+```
 usage: peka.py [-h] -i INPUTPEAKS -x INPUTXLSITES -g GENOMEFASTA -gi GENOMEINDEX -r REGIONS [-k [{3,4,5,6,7}]] [-o [OUTPUTPATH]] [-w [WINDOW]] [-dw [DISTALWINDOW]] [-t [TOPN]] [-p [PERCENTILE]] [-c [CLUSTERS]] [-s [SMOOTHING]]
                [-re [{masked,unmasked,repeats_only}]] [-a [ALLOUTPUTS]] [-sr [{whole_gene,intron,UTR3,other_exon,UTR5,ncRNA,intergenic,genome}]] [-sub [SUBSAMPLE]]
 
@@ -65,3 +65,4 @@ optional arguments:
                         choose to run PEKA on a specific region only [DEFAULT None]
   -sub [SUBSAMPLE], --subsample [SUBSAMPLE]
                         window used for smoothing kmer positional distribution curves [DEFAULT True]
+```
