@@ -29,11 +29,11 @@ textdistance=4.1.3
 `regions_file`: *custom genome segmentation file;*  
 `window`: *region around thresholded crosslinks where positional
 distributions are obtained by counting kmers per position, usualy 25;*  
-`window_distal`: *region considered for background distributio (default 150);*  
+`window_distal`: *region considered for background distributio (recommended 150);*  
 `kmer_length`: *length (in nucleotides) of kmers to be analysed between 3 and 7, higher is not tested);*  
 `output_path`: *path to folder where the outputs will be saved;*
-`top_n`: *number of kmers ranked by PEKA-score in descending order for clustering and plotting (default 20);*  
-`percentile`: *used for thresholding crosslinks (default 0.7);*  
-`clusters`: *number of clusters of kmers(default 5);*  
-`smoothing`: *window used for smoothing kmer positional distribution curves (default 6);*  
+`top_n`: *number of kmers ranked by PEKA-score in descending order for clustering and plotting (recommended 20);*  
+`percentile`: *used for thresholding crosslinks (recommended 0.7);*  
+`clusters`: *number of clusters of kmers(recommended 5);*  
+`smoothing`: *window used for smoothing kmer positional distribution curves (recommended 6);*  
 `repeats`: *how to treat repeating regions within genome (options: 'masked', 'unmasked', 'repeats_only'). When applying any of the options with the exception of repeats == 'unmasked', a genome with masked repeat sequences should be used for input;*  
