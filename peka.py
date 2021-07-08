@@ -1204,7 +1204,6 @@ def run(
         print(f"Analysing {region} runtime: {((plot_cp - region_start) / 60):.2f}")
         print(f"Analysing {region} in seconds per thresholded_crosslink: {(plot_cp - region_start) / ntxn}")
     # cleanup temporary files
-    shutil.rmtree(TEMP_PATH)
     pbt.cleanup()
     print(f"Analysis total runtime {((time.time() - start) / 60):.2f}")
 
