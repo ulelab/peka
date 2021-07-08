@@ -63,7 +63,6 @@ import random
 import time
 from collections import OrderedDict
 from itertools import combinations, product
-from random import randint
 import sys
 import matplotlib
 matplotlib.use('Agg')
