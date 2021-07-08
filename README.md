@@ -19,6 +19,18 @@ scikit-learn=0.21.3
 pandas=0.24.2
 textdistance=4.1.3
 ```
+
+**Set up**:
+
+We recommend running PEKA in a conda environment so all the dependencies are managed for you, to set this up run the following command from your PEKA directory:
+```
+conda env create -f environment.yml
+```
+Before you run PEKA, activate your environment:
+```
+conda activate peka
+```
+
 **Usage**:
 ```
 usage: peka.py [-h] -i INPUTPEAKS -x INPUTXLSITES -g GENOMEFASTA -gi GENOMEINDEX -r REGIONS [-k [{3,4,5,6,7}]] [-o [OUTPUTPATH]] [-w [WINDOW]] [-dw [DISTALWINDOW]] [-t [TOPN]] [-p [PERCENTILE]] [-c [CLUSTERS]] [-s [SMOOTHING]]
@@ -62,7 +74,18 @@ optional arguments:
   -a [ALLOUTPUTS], --alloutputs [ALLOUTPUTS]
                         controls the number of outputs, can be True/False [DEFAULT True]
   -sr [{whole_gene,intron,UTR3,other_exon,UTR5,ncRNA,intergenic,genome}], --specificregion [{whole_gene,intron,UTR3,other_exon,UTR5,ncRNA,intergenic,genome}]
-                        choose to run PEKA on a specific region only [DEFAULT None]
+                        choose to run PEKA on a specific region only, to specify multiple regions enter them space separated [DEFAULT None]
   -sub [SUBSAMPLE], --subsample [SUBSAMPLE]
                         if the crosslinks file is very large, they can be subsampled to reduce runtime, can be True/False [DEFAULT True]
+```
+
+**Common issues**
+If you have one of the following errors, it is because the numpy/pandas versions you are running are incompatible with PEKA.
+To ensure you are using the correct versions, we reccomend using our conda environment.
+```
+AttributeError: type object 'object' has no attribute 'dtype'
+```
+or
+```
+TypeError: sum() got an unexpected keyword argument 'axis'
 ```
