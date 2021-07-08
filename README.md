@@ -80,6 +80,7 @@ optional arguments:
 ```
 
 **Common issues**
+
 If you have one of the following errors, it is because the numpy/pandas versions you are running are incompatible with PEKA.
 To ensure you are using the correct versions, we reccomend using our conda environment.
 ```
