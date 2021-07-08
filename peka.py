@@ -60,7 +60,6 @@ import csv
 import gzip
 import os
 import random
-import shutil
 import time
 from collections import OrderedDict
 from itertools import combinations, product
