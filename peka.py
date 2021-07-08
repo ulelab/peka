@@ -77,7 +77,7 @@ import pybedtools as pbt
 import seaborn as sns
 import textdistance as td
 from plumbum import local
-from plumbum.cmd import sort, zcat
+from plumbum.cmd import sort, gunzip
 from sklearn.cluster import AffinityPropagation
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.utils.testing import ignore_warnings
@@ -117,7 +117,7 @@ def main():
 
     optional.add_argument('-k',"--kmerlength", choices=[3,4,5,6,7], default=4, nargs='?',
                         help='kmer length [DEFAULT 4]')
-    optional.add_argument('-o',"--outputpath", type=str, default=".", nargs='?',
+    optional.add_argument('-o',"--outputpath", type=str, default=os.getcwd(), nargs='?',
                         help='output folder [DEFAULT current directory]')
     optional.add_argument('-w',"--window", type=int, default=25, nargs='?',
                         help='window around thresholded crosslinks for finding enriched kmers [DEFAULT 25]')
@@ -139,8 +139,8 @@ def main():
                                     used for input, ie. repeats in lowercase letters.')
     optional.add_argument('-a',"--alloutputs", type=bool, default=True, nargs='?',
                         help='controls the number of outputs, can be True/False [DEFAULT True]')
-    optional.add_argument('-sr',"--specificregion", choices=["whole_gene", "intron", "UTR3", "other_exon", "UTR5", "ncRNA", "intergenic", "genome"], default=None, nargs='?',
-                        help='choose to run PEKA on a specific region only [DEFAULT None]')
+    optional.add_argument('-sr',"--specificregion", choices=["whole_gene", "intron", "UTR3", "other_exon", "UTR5", "ncRNA", "intergenic", "genome"], default=None, nargs='+',
+                        required=False, help='choose to run PEKA on a specific region only, to specify multiple regions enter them space separated [DEFAULT None]')
     optional.add_argument('-sub',"--subsample", type=bool, default=True, nargs='?',
                         help='if the crosslinks file is very large, they can be subsampled to reduce runtime, can be True/False [DEFAULT True]')
 
@@ -162,9 +162,9 @@ def main():
         args.clusters,
         args.smoothing,
         args.repeats,
-        arg.alloutputs,
-        arg.specificregions,
-        arg.subsample)
+        args.alloutputs,
+        args.specificregion,
+        args.subsample)
 
 
 # overriding pybedtools to_dataframe method to avoid warning
@@ -302,7 +302,7 @@ def get_complement(interval_file, chrsizes_file):
             return
         interval_file_name = interval_file.split("/")[-1].replace(".gz", "")
         temp_file_interval = "{}/{}.TEMPORARY".format(TEMP_PATH, interval_file_name)
-        get_sorted = zcat[interval_file] | sort["-k1,1", "-k2,2n", "-k3,3n"]
+        get_sorted = gunzip["-c",interval_file] | sort["-k1,1", "-k2,2n", "-k3,3n"]
         sorted_interval = get_sorted()
         with open(temp_file_interval, "w") as file:
             file.write(sorted_interval)
@@ -873,7 +873,7 @@ def get_cluster_wide_sum(topkmer_pos_count, c_dict):
     return pd.concat(clusters, axis=1).rolling(5, center=True).mean().dropna()
 
 
-def plot_positional_distribution(df_in, df_sum, c_dict, c_rank, name, cluster_rename, region, kmer_length):
+def plot_positional_distribution(df_in, df_sum, c_dict, c_rank, name, cluster_rename, region, kmer_length, output_path):
     """Plot each cluster on its own plot.
 
     Also, plot combining the averages of clusters over a larger window.
@@ -916,25 +916,23 @@ def plot_positional_distribution(df_in, df_sum, c_dict, c_rank, name, cluster_re
     sns.lineplot(data=df_ordered, ax=axs[axs_x_sumplt, axs_y_sumplt], ci=None, **lineplot_kwrgs)
     fig.savefig(f"{output_path}/{name}_{kmer_length}mer_{region}.pdf", format="pdf")
 
-
-def run(
-    peak_file,
-    sites_file,
-    genome,
-    genome_fai,
-    regions_file,
-    window,
-    window_distal,
+def run(peak_file, 
+    sites_file, 
+    genome, 
+    genome_fai, 
+    regions_file, 
     kmer_length,
     output_path,
+    window,
+    window_distal,
     top_n,
     percentile,
     clusters,
     smoothing,
-    all_outputs=False,
-    regions=None,
-    subsample=True,
-    repeats="masked",
+    repeats,
+    all_outputs,
+    regions,
+    subsample
 ):
     """Start the analysis.
 
@@ -995,7 +993,10 @@ def run(
                             "subsample": subsample, 
                             "all_outputs": all_outputs, 
                             })
+
     df_params.to_csv(f'{output_path}/{sample_name}_run_parameters.tsv', sep='\t')
+
+
 
     print("Getting thresholded crosslinks")
     df_txn = get_threshold_sites(sites_file, percentile=percentile)
@@ -1266,7 +1267,7 @@ def run(
         # finnaly plot all the clusters and the wider window (-150 to 100) plot
         # with average occurences
         plot_positional_distribution(
-            df_smooth, df_cluster_sum, clusters_dict, clusters_rank, sample_name, cluster_rename, region, kmer_length
+            df_smooth, df_cluster_sum, clusters_dict, clusters_rank, sample_name, cluster_rename, region, kmer_length, output_path
         )
         plot_cp = time.time()
         print(f"Analysing {region} runtime: {((plot_cp - region_start) / 60):.2f}")
@@ -1279,8 +1280,38 @@ def run(
 
 if __name__ == '__main__':
 
-    peak_file_path, sites_file_path, genome_path, genome_fai_path, regions_file_path, window, window_distal, kmer_length_input, \
-    output_path, top_n, percentile, clusters, smoothing, repeats, all_outputs, regions, subsample = main()
+    peak_file_path, \
+    sites_file_path, \
+    genome_path, \
+    genome_fai_path, \
+    regions_file_path, \
+    kmer_length_input, \
+    output_path, \
+    window, \
+    window_distal, \
+    top_n, \
+    percentile, \
+    clusters, \
+    smoothing, \
+    repeats, \
+    all_outputs, \
+    regions, \
+    subsample = main()
 
-    run(peak_file_path, sites_file_path, genome_path, genome_fai_path, regions_file_path, window, window_distal, kmer_length_input, \
-        output_path, top_n, percentile, clusters, smoothing, repeats, all_outputs, regions, subsample)
+    run(peak_file_path, 
+    sites_file_path, 
+    genome_path, 
+    genome_fai_path, 
+    regions_file_path, 
+    kmer_length_input, 
+    output_path, 
+    window, 
+    window_distal, 
+    top_n, 
+    percentile, 
+    clusters, 
+    smoothing, 
+    repeats, 
+    all_outputs, 
+    regions, 
+    subsample)
