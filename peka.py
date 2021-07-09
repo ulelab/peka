@@ -135,8 +135,8 @@ def main():
                             "repeats_only"). When applying any of the options with the exception of \n \
                                 repeats == "unmasked", a genome with soft-masked repeat sequences should be \n \
                                     used for input, ie. repeats in lowercase letters.')
-    optional.add_argument('-a',"--alloutputs", type=bool, default=True, nargs='?',
-                        help='controls the number of outputs, can be True/False [DEFAULT True]')
+    optional.add_argument('-a',"--alloutputs", type=bool, default=False, nargs='?',
+                        help='controls the number of outputs, can be True/False [DEFAULT False]')
     optional.add_argument('-sr',"--specificregion", choices=["whole_gene", "intron", "UTR3", "other_exon", "UTR5", "ncRNA", "intergenic", "genome"], default=None, nargs='+',
                         required=False, help='choose to run PEKA on a specific region only, to specify multiple regions enter them space separated [DEFAULT None]')
     optional.add_argument('-sub',"--subsample", type=bool, default=True, nargs='?',

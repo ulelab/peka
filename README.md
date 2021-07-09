@@ -70,9 +70,9 @@ optional arguments:
                         window used for smoothing kmer positional distribution curves [DEFAULT 6]
   -re [{masked,unmasked,repeats_only}], --repeats [{masked,unmasked,repeats_only}]
                         how to treat repeating regions within genome (options: "masked", "unmasked", "repeats_only"). When applying any of the options with the exception of repeats == "unmasked", a genome with soft-masked
-                        repeat sequences should be used for input, ie. repeats in lowercase letters.
+                        repeat sequences should be used for input, ie. repeats in lowercase letters. [DEFAULT "unmasked"]
   -a [ALLOUTPUTS], --alloutputs [ALLOUTPUTS]
-                        controls the number of outputs, can be True/False [DEFAULT True]
+                        controls the number of outputs, can be True/False [DEFAULT False]
   -sr [{whole_gene,intron,UTR3,other_exon,UTR5,ncRNA,intergenic,genome}], --specificregion [{whole_gene,intron,UTR3,other_exon,UTR5,ncRNA,intergenic,genome}]
                         choose to run PEKA on a specific region only, to specify multiple regions enter them space separated [DEFAULT None]
   -sub [SUBSAMPLE], --subsample [SUBSAMPLE]
@@ -89,4 +89,28 @@ AttributeError: type object 'object' has no attribute 'dtype'
 or
 ```
 TypeError: sum() got an unexpected keyword argument 'axis'
+```
+
+**Outputs**
+
+The default outputs produced by PEKA for each specified genomic region are:
+- A pdf file with graphs showing k-mer occurrence distributions around thresholded crosslink sites for top n most enriched k-mers. K-mers are clustered based on their sequence and distributions.
+- A csv file with clusters of top n k-mers.
+- A tsv file with summed occurrence distributions of k-mers within defined clusters. Distributions in this file correspond to the curves on the last plot in the .pdf file.
+- A tsv file with calculated PEKA score and occurrence distribution for all possible k-mers in the window -48 to +50 around thresholded crosslinks. 
+            This file also contains several other values that are calculated for a particular k-mer during the analysis, such as:
+                - mtxn :  position of occurrence distribution max peak
+                - prtxn : positions used for calculating motif enrichment relative to sampled background sequences
+                - DtXn : average k-mer occurence in a distal window around thresholded crosslink sites
+                - artxn : average k-mer relative occurrence at prtxn positions around thresholded crosslink sites
+                - aroxn : average k-mer relative occurrence at prtxn positions around background crosslink sites
+                - etxn : log2 relative k-mer enrichment, calculated as log2(artxn/aroxn)
+
+If the option ALLOUTPUTS is set to True, the following files are also outputted for each specified genomic region:
+- a bed file of thresholded crosslink sites
+- a bed file with background crosslink sites (oxn)
+- a tsv file with relative occurrence distribution (rtxn) for all possible k-mers. Relative occurrences are obtained by dividing raw occurrences with the average k-mer occurrence in the distal region (DtXn).
+
+Other outputs:
+- A tsv file with saved run parameters
 ```
