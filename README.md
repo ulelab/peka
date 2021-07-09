@@ -90,6 +90,8 @@ or
 ```
 TypeError: sum() got an unexpected keyword argument 'axis'
 ```
+The script needs writing permission in the staging directory to make `results` directory and environment variable `TMPDIR` for temporary files. 
+If you get `KeyError: 'TMPDIR'` a solution would be to type `export TMPDIR=<path_to_folder>` in terminal where you want to run the script.
 
 **Outputs**
 
@@ -98,13 +100,13 @@ The default outputs produced by PEKA for each specified genomic region are:
 - A csv file with clusters of top n k-mers.
 - A tsv file with summed occurrence distributions of k-mers within defined clusters. Distributions in this file correspond to the curves on the last plot in the .pdf file.
 - A tsv file with calculated PEKA score and occurrence distribution for all possible k-mers in the window -48 to +50 around thresholded crosslinks. 
-            This file also contains several other values that are calculated for a particular k-mer during the analysis, such as:
-                - mtxn :  position of occurrence distribution max peak
-                - prtxn : positions used for calculating motif enrichment relative to sampled background sequences
-                - DtXn : average k-mer occurence in a distal window around thresholded crosslink sites
-                - artxn : average k-mer relative occurrence at prtxn positions around thresholded crosslink sites
-                - aroxn : average k-mer relative occurrence at prtxn positions around background crosslink sites
-                - etxn : log2 relative k-mer enrichment, calculated as log2(artxn/aroxn)
+    This file also contains several other values that are calculated for a particular k-mer during the analysis, such as:
+        - mtxn :  position of occurrence distribution max peak
+        - prtxn : positions used for calculating motif enrichment relative to sampled background sequences
+        - DtXn : average k-mer occurence in a distal window around thresholded crosslink sites
+        - artxn : average k-mer relative occurrence at prtxn positions around thresholded crosslink sites
+        - aroxn : average k-mer relative occurrence at prtxn positions around background crosslink sites
+        - etxn : log2 relative k-mer enrichment, calculated as log2(artxn/aroxn)
 
 If the option ALLOUTPUTS is set to True, the following files are also outputted for each specified genomic region:
 - a bed file of thresholded crosslink sites
@@ -113,4 +115,3 @@ If the option ALLOUTPUTS is set to True, the following files are also outputted 
 
 Other outputs:
 - A tsv file with saved run parameters
-```
