@@ -90,7 +90,7 @@ or
 ```
 TypeError: sum() got an unexpected keyword argument 'axis'
 ```
-The script needs writing permission in the staging directory to make `results` directory and environment variable `TMPDIR` for temporary files. 
+The script needs writing permission in the staging directory to save results and make an environment variable `TMPDIR` for temporary files. 
 If you get `KeyError: 'TMPDIR'` a solution would be to type `export TMPDIR=<path_to_folder>` in terminal where you want to run the script.
 
 **Outputs**
