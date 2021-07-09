@@ -113,8 +113,8 @@ def main():
     required.add_argument('-r',"--regions", type=str, required=True,
                         help='genome segmentation file produced as output of "iCount segment" function')
 
-    optional.add_argument('-k',"--kmerlength", choices=[3,4,5,6,7], default=4, nargs='?',
-                        help='kmer length [DEFAULT 4]')
+    optional.add_argument('-k',"--kmerlength", choices=[3,4,5,6,7], default=5, nargs='?',
+                        help='kmer length [DEFAULT 5]')
     optional.add_argument('-o',"--outputpath", type=str, default=os.getcwd(), nargs='?',
                         help='output folder [DEFAULT current directory]')
     optional.add_argument('-w',"--window", type=int, default=25, nargs='?',
