@@ -53,7 +53,7 @@ required arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -k [{3,4,5,6,7}], --kmerlength [{3,4,5,6,7}]
-                        kmer length [DEFAULT 4]
+                        kmer length [DEFAULT 5]
   -o [OUTPUTPATH], --outputpath [OUTPUTPATH]
                         output folder [DEFAULT current directory]
   -w [WINDOW], --window [WINDOW]
@@ -76,7 +76,7 @@ optional arguments:
   -sr [{whole_gene,intron,UTR3,other_exon,UTR5,ncRNA,intergenic,genome}], --specificregion [{whole_gene,intron,UTR3,other_exon,UTR5,ncRNA,intergenic,genome}]
                         choose to run PEKA on a specific region only, to specify multiple regions enter them space separated [DEFAULT None]
   -sub [SUBSAMPLE], --subsample [SUBSAMPLE]
-                        if the crosslinks file is very large, they can be subsampled to reduce runtime, can be True/False [DEFAULT True]
+                        if the crosslinks file is large, they can be subsampled to reduce runtime, can be True/False [DEFAULT True]
 ```
 
 **Common issues**
