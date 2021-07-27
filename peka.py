@@ -130,9 +130,9 @@ def main():
                         help='how many enriched kmers to cluster and plot [DEFAULT 5]')
     optional.add_argument('-s',"--smoothing", type=int, default=6, nargs='?',
                         help='window used for smoothing kmer positional distribution curves [DEFAULT 6]')
-    optional.add_argument('-re',"--repeats", choices=['masked', 'unmasked', 'repeats_only'], default='unmasked', nargs='?',
+    optional.add_argument('-re',"--repeats", choices=['remove_repeats', 'masked', 'unmasked', 'repeats_only'], default='unmasked', nargs='?',
                         help='how to treat repeating regions within genome (options: "masked", "unmasked", \n \
-                            "repeats_only"). When applying any of the options with the exception of \n \
+                            "repeats_only", "remove_repeats"). When applying any of the options with the exception of \n \
                                 repeats == "unmasked", a genome with soft-masked repeat sequences should be \n \
                                     used for input, ie. repeats in lowercase letters.')
     optional.add_argument('-a',"--alloutputs", type=bool, default=False, nargs='?',
@@ -992,7 +992,7 @@ def run(peak_file,
                             "all_outputs": all_outputs, 
                             })
 
-    df_params.to_csv(f'{output_path}/{sample_name}_run_parameters.tsv', sep='\t')
+    df_params.to_csv(f'{output_path}/{sample_name}_run_parameters.tsv', sep='\t', header=False)
 
 
 
