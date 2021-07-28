@@ -12,7 +12,7 @@ python=3.7
 matplotlib=3.1.2
 numpy=1.17.4
 pybedtools=0.8.0
-scipy=1.3.1
+scipy=1.6.2
 seaborn=0.9.0
 plumbum=1.6.8
 scikit-learn=0.21.3
@@ -68,8 +68,8 @@ optional arguments:
                         how many enriched kmers to cluster and plot [DEFAULT 5]
   -s [SMOOTHING], --smoothing [SMOOTHING]
                         window used for smoothing kmer positional distribution curves [DEFAULT 6]
-  -re [{masked,unmasked,repeats_only}], --repeats [{masked,unmasked,repeats_only}]
-                        how to treat repeating regions within genome (options: "masked", "unmasked", "repeats_only"). When applying any of the options with the exception of repeats == "unmasked", a genome with soft-masked
+  -re [{masked,unmasked,repeats_only}], --repeats [{masked,unmasked,repeats_only,remove_repeats}]
+                        how to treat repeating regions within genome (options: "masked", "unmasked", "repeats_only", "remove_repeats"). When applying any of the options with the exception of repeats == "unmasked", a genome with soft-masked
                         repeat sequences should be used for input, ie. repeats in lowercase letters. [DEFAULT "unmasked"]
   -a [ALLOUTPUTS], --alloutputs [ALLOUTPUTS]
                         controls the number of outputs, can be True/False [DEFAULT False]
