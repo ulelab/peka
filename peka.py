@@ -80,6 +80,7 @@ from sklearn.cluster import AffinityPropagation
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.utils.testing import ignore_warnings
 import argparse
+import scipy
 
 
 REGIONS = ["whole_gene", "intron", "UTR3", "other_exon", "UTR5", "ncRNA", "intergenic", "genome"]
@@ -625,7 +626,7 @@ def get_clustering(kmer_pos_count, x1, x2, kmer_length, window, smoot, n_cluster
     kmers = np.asarray(list(kmer_pos_count.keys()))
     jaccard_similarity = np.array([[td.jaccard.similarity(k1, k2) for k1 in kmers] for k2 in kmers])
     array_test = df_smooth.loc[-window:window, :].T.to_numpy()
-    correlation_similarity = (np.corrcoef(array_test) + 1) / 2
+    correlation_similarity = (scipy.stats.spearmanr(array_test, axis=1)[0] + 1) / 2 #to bring correlation values between 0 and 1
     combined1 = np.add(jaccard_similarity, correlation_similarity * kmer_length) / (kmer_length + 1)
     max_count_similarity = [
         np.array_split(
