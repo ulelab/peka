@@ -114,7 +114,7 @@ def main():
     required.add_argument('-r',"--regions", type=str, required=True,
                         help='genome segmentation file produced as output of "iCount segment" function')
 
-    optional.add_argument('-k',"--kmerlength", choices=[3,4,5,6,7], default=5, nargs='?',
+    optional.add_argument('-k',"--kmerlength", type=int, choices=[3,4,5,6,7], default=5, nargs='?',
                         help='kmer length [DEFAULT 5]')
     optional.add_argument('-o',"--outputpath", type=str, default=os.getcwd(), nargs='?',
                         help='output folder [DEFAULT current directory]')
@@ -131,7 +131,7 @@ def main():
                         help='how many enriched kmers to cluster and plot [DEFAULT 5]')
     optional.add_argument('-s',"--smoothing", type=int, default=6, nargs='?',
                         help='window used for smoothing kmer positional distribution curves [DEFAULT 6]')
-    optional.add_argument('-re',"--repeats", choices=['remove_repeats', 'masked', 'unmasked', 'repeats_only'], default='unmasked', nargs='?',
+    optional.add_argument('-re',"--repeats", type=str, choices=['remove_repeats', 'masked', 'unmasked', 'repeats_only'], default='unmasked', nargs='?',
                         help='how to treat repeating regions within genome (options: "masked", "unmasked", \n \
                             "repeats_only", "remove_repeats"). When applying any of the options with the exception of \n \
                                 repeats == "unmasked", a genome with soft-masked repeat sequences should be \n \
