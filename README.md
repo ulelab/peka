@@ -55,7 +55,7 @@ optional arguments:
   -k [{3,4,5,6,7}], --kmerlength [{3,4,5,6,7}]
                         kmer length [DEFAULT 5]
   -o [OUTPUTPATH], --outputpath [OUTPUTPATH]
-                        output folder [DEFAULT current directory]
+                        output folder [DEFAULT current directory]. Make sure the specified folder exists before execution of the script.
   -w [WINDOW], --window [WINDOW]
                         window around thresholded crosslinks for finding enriched kmers [DEFAULT 25]
   -dw [DISTALWINDOW], --distalwindow [DISTALWINDOW]
