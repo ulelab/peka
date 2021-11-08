@@ -126,7 +126,8 @@ def main():
                         help='number of kmers ranked by z-score in descending order for clustering and plotting [DEFAULT 20]')
     optional.add_argument('-p',"--percentile", type=float, default=0.7, nargs='?',
                         help='percentile for considering thresholded crosslinks eg. percentile 0.7 means \n \
-                            that the top 70 percent of crosslinks will be considered thresholded [DEFAULT 0.7]')
+                            that a cDNA count threshold is determined at which >=70 percent of the crosslink sites within the region \n \
+                            have a cDNA count equal or below the threshold. Thresholded crosslinks have cDNA count above the threshold [DEFAULT 0.7]')
     optional.add_argument('-c',"--clusters", type=int, default=5, nargs='?',
                         help='how many enriched kmers to cluster and plot [DEFAULT 5]')
     optional.add_argument('-s',"--smoothing", type=int, default=6, nargs='?',
@@ -888,7 +889,7 @@ def plot_positional_distribution(df_in, df_sum, c_dict, c_rank, name, cluster_re
         "linewidth": 1,
         "dashes": False,
     }
-    xlabel = "Positions of kmer start relative to crosslinks"
+    xlabel = "Positions of kmer center relative to crosslinks"
     ylabel = "Kmer occurence per thresholded crosslinks (%)"
     rank_c = {y: x for x, y in c_rank.items()}
     rank_ordered = OrderedDict(sorted(rank_c.items()))

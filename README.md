@@ -63,7 +63,7 @@ optional arguments:
   -t [TOPN], --topn [TOPN]
                         number of kmers ranked by z-score in descending order for clustering and plotting [DEFAULT 20]
   -p [PERCENTILE], --percentile [PERCENTILE]
-                        percentile for considering thresholded crosslinks eg. percentile 0.7 means that the top 70 percent of crosslinks will be considered thresholded [DEFAULT 0.7]
+                        percentile for considering thresholded crosslinks eg. percentile 0.7 means that a cDNA count threshold is determined at which >=70 percent of the crosslink sites within the region have a cDNA count equal or below the threshold. Thresholded crosslinks have cDNA count above the threshold [DEFAULT 0.7]'
   -c [CLUSTERS], --clusters [CLUSTERS]
                         how many enriched kmers to cluster and plot [DEFAULT 5]
   -s [SMOOTHING], --smoothing [SMOOTHING]
