@@ -1276,41 +1276,46 @@ def run(peak_file,
     pbt.cleanup()
     print(f"Analysis total runtime {((time.time() - start) / 60):.2f}")
 
+def cli():
+    (
+        peak_file_path,
+        sites_file_path,
+        genome_path,
+        genome_fai_path,
+        regions_file_path,
+        kmer_length_input,
+        output_path,
+        window,
+        window_distal,
+        top_n,
+        percentile,
+        clusters,
+        smoothing,
+        repeats,
+        all_outputs,
+        regions,
+        subsample,
+    )= main()
+
+    run(
+        peak_file_path,
+        sites_file_path,
+        genome_path,
+        genome_fai_path,
+        regions_file_path,
+        kmer_length_input,
+        output_path,
+        window,
+        window_distal,
+        top_n,
+        percentile,
+        clusters,
+        smoothing,
+        repeats,
+        all_outputs,
+        regions,
+        subsample,
+    )
 
 if __name__ == '__main__':
-
-    peak_file_path, \
-    sites_file_path, \
-    genome_path, \
-    genome_fai_path, \
-    regions_file_path, \
-    kmer_length_input, \
-    output_path, \
-    window, \
-    window_distal, \
-    top_n, \
-    percentile, \
-    clusters, \
-    smoothing, \
-    repeats, \
-    all_outputs, \
-    regions, \
-    subsample = main()
-
-    run(peak_file_path, 
-    sites_file_path, 
-    genome_path, 
-    genome_fai_path, 
-    regions_file_path, 
-    kmer_length_input, 
-    output_path, 
-    window, 
-    window_distal, 
-    top_n, 
-    percentile, 
-    clusters, 
-    smoothing, 
-    repeats, 
-    all_outputs, 
-    regions, 
-    subsample)
+    cli()
