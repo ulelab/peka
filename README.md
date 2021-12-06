@@ -31,6 +31,12 @@ Before you run PEKA, activate your environment:
 conda activate peka
 ```
 
+You may then install PEKA to the environment with the command:
+```
+python -m pip install . -vv --ignore-installed --no-deps
+```
+This command is also useful for installing development versions of PEKA.
+
 **Usage**:
 ```
 usage: peka.py [-h] -i INPUTPEAKS -x INPUTXLSITES -g GENOMEFASTA -gi GENOMEINDEX -r REGIONS [-k [{3,4,5,6,7}]] [-o [OUTPUTPATH]] [-w [WINDOW]] [-dw [DISTALWINDOW]] [-t [TOPN]] [-p [PERCENTILE]] [-c [CLUSTERS]] [-s [SMOOTHING]]
