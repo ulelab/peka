@@ -40,7 +40,7 @@ This command is also useful for installing development versions of PEKA.
 **Usage**:
 ```
 usage: peka.py [-h] -i INPUTPEAKS -x INPUTXLSITES -g GENOMEFASTA -gi GENOMEINDEX -r REGIONS [-k [{3,4,5,6,7}]] [-o [OUTPUTPATH]] [-w [WINDOW]] [-dw [DISTALWINDOW]] [-t [TOPN]] [-p [PERCENTILE]] [-c [CLUSTERS]] [-s [SMOOTHING]]
-               [-re [{masked,unmasked,repeats_only}]] [-a [ALLOUTPUTS]] [-sr [{whole_gene,intron,UTR3,other_exon,UTR5,ncRNA,intergenic,genome}]] [-sub [SUBSAMPLE]]
+               [-re [{masked,unmasked,repeats_only,remove_repeats}]] [-a [ALLOUTPUTS]] [-sr [{genome,whole_gene,intron,UTR3,other_exon,ncRNA,intergenic}]] [-sub [SUBSAMPLE]]
 
 Search for enriched motifs around thresholded crosslinks in CLIP data.
 
@@ -63,7 +63,7 @@ optional arguments:
   -o [OUTPUTPATH], --outputpath [OUTPUTPATH]
                         output folder [DEFAULT current directory]. Make sure the specified folder exists before execution of the script.
   -w [WINDOW], --window [WINDOW]
-                        window around thresholded crosslinks for finding enriched kmers [DEFAULT 25]
+                        window around thresholded crosslinks for finding enriched kmers [DEFAULT 20]
   -dw [DISTALWINDOW], --distalwindow [DISTALWINDOW]
                         window around enriched kmers to calculate distribution [DEFAULT 150]
   -t [TOPN], --topn [TOPN]
@@ -74,15 +74,15 @@ optional arguments:
                         how many enriched kmers to cluster and plot [DEFAULT 5]
   -s [SMOOTHING], --smoothing [SMOOTHING]
                         window used for smoothing kmer positional distribution curves [DEFAULT 6]
-  -re [{masked,unmasked,repeats_only}], --repeats [{masked,unmasked,repeats_only,remove_repeats}]
+  -re [{masked,unmasked,repeats_only,remove_repeats}], --repeats [{masked,unmasked,repeats_only,remove_repeats}]
                         how to treat repeating regions within genome (options: "masked", "unmasked", "repeats_only", "remove_repeats"). When applying any of the options with the exception of repeats == "unmasked", a genome with soft-masked
                         repeat sequences should be used for input, ie. repeats in lowercase letters. [DEFAULT "unmasked"]
   -a [ALLOUTPUTS], --alloutputs [ALLOUTPUTS]
                         controls the number of outputs, can be True/False [DEFAULT False]
-  -sr [{whole_gene,intron,UTR3,other_exon,UTR5,ncRNA,intergenic,genome}], --specificregion [{whole_gene,intron,UTR3,other_exon,UTR5,ncRNA,intergenic,genome}]
+  -sr [{genome,whole_gene,intron,UTR3,other_exon,ncRNA,intergenic}], --specificregion [genome,whole_gene,intron,UTR3,other_exon,ncRNA,intergenic}]
                         choose to run PEKA on a specific region only, to specify multiple regions enter them space separated [DEFAULT None]
   -sub [SUBSAMPLE], --subsample [SUBSAMPLE]
-                        if the crosslinks file is large, they can be subsampled to reduce runtime, can be True/False [DEFAULT True]
+                        if the crosslinks file is large, they can be subsampled to reduce runtime, can be True/False, recommended is True [DEFAULT True]
 ```
 
 **Common issues**
