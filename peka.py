@@ -81,6 +81,7 @@ from sklearn.exceptions import ConvergenceWarning
 from sklearn.utils.testing import ignore_warnings
 import argparse
 import scipy
+from distutils.util import strtobool
 
 
 REGIONS = ["whole_gene", "intron", "UTR3", "other_exon", "UTR5", "ncRNA", "intergenic", "genome"]
@@ -137,11 +138,11 @@ def cli():
                             "repeats_only", "remove_repeats"). When applying any of the options with the exception of \n \
                                 repeats == "unmasked", a genome with soft-masked repeat sequences should be \n \
                                     used for input, ie. repeats in lowercase letters.')
-    optional.add_argument('-a',"--alloutputs", type=bool, default=False, nargs='?',
-                        help='controls the number of outputs, can be True/False [DEFAULT False]')
+    optional.add_argument('-a',"--alloutputs", dest='alloutputs', default='False', type=lambda x:bool(strtobool(x)),
+                        help='controls the number of outputs, can be True or False [DEFAULT False]')
     optional.add_argument('-sr',"--specificregion", choices=["genome", "whole_gene", "intron", "UTR3", "other_exon", "ncRNA", "intergenic"], default=None, nargs='+',
                         required=False, help='choose to run PEKA on a specific region only, to specify multiple regions enter them space separated [DEFAULT None]')
-    optional.add_argument('-sub',"--subsample", type=bool, default=True, nargs='?',
+    optional.add_argument('-sub',"--subsample", dest='subsample', default='True', type=lambda x:bool(strtobool(x)),
                         help='if the crosslinks file is very large, they can be subsampled to reduce runtime, can be True/False [DEFAULT True]')
 
     parser._action_groups.append(optional)
@@ -1295,7 +1296,7 @@ def main():
         all_outputs,
         regions,
         subsample,
-    )= cli()
+    ) = cli()
 
     run(
         peak_file_path,
