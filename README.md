@@ -39,7 +39,7 @@ This command is also useful for installing development versions of PEKA.
 
 **Usage**:
 ```
-usage: peka.py [-h] -i INPUTPEAKS -x INPUTXLSITES -g GENOMEFASTA -gi GENOMEINDEX -r REGIONS [-k [{3,4,5,6,7}]] [-o [OUTPUTPATH]] [-w [WINDOW]] [-dw [DISTALWINDOW]] [-t [TOPN]] [-p [PERCENTILE]] [-c [CLUSTERS]] [-s [SMOOTHING]]
+usage: peka.py [-h] -i INPUTPEAKS -x INPUTXLSITES -g GENOMEFASTA -gi GENOMEINDEX -r REGIONS [-k [{4,5,6,7}]] [-o [OUTPUTPATH]] [-w [WINDOW]] [-dw [DISTALWINDOW]] [-t [TOPN]] [-p [PERCENTILE]] [-c [CLUSTERS]] [-s [SMOOTHING]]
                [-re [{masked,unmasked,repeats_only,remove_repeats}]] [-a [ALLOUTPUTS]] [-sr [{genome,whole_gene,intron,UTR3,other_exon,ncRNA,intergenic}]] [-sub [SUBSAMPLE]]
 
 Search for enriched motifs around thresholded crosslinks in CLIP data.
@@ -58,7 +58,7 @@ required arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -k [{3,4,5,6,7}], --kmerlength [{3,4,5,6,7}]
+  -k [{4,5,6,7}], --kmerlength [{4,5,6,7}]
                         kmer length [DEFAULT 5]
   -o [OUTPUTPATH], --outputpath [OUTPUTPATH]
                         output folder [DEFAULT current directory]. Make sure the specified folder exists before execution of the script.
