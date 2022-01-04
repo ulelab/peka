@@ -99,7 +99,7 @@ REGIONS_MAP = {}
 TEMP_PATH = None
 
 
-def main():
+def cli():
     parser = argparse.ArgumentParser(description='Search for enriched motifs around thresholded crosslinks in CLIP data.')
     optional = parser._action_groups.pop()
     required = parser.add_argument_group('required arguments')
@@ -1276,7 +1276,7 @@ def run(peak_file,
     pbt.cleanup()
     print(f"Analysis total runtime {((time.time() - start) / 60):.2f}")
 
-def cli():
+def main():
     (
         peak_file_path,
         sites_file_path,
@@ -1295,7 +1295,7 @@ def cli():
         all_outputs,
         regions,
         subsample,
-    )= main()
+    )= cli()
 
     run(
         peak_file_path,
@@ -1318,4 +1318,4 @@ def cli():
     )
 
 if __name__ == '__main__':
-    cli()
+    main()
