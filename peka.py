@@ -99,7 +99,7 @@ REGIONS_MAP = {}
 TEMP_PATH = None
 
 
-def main():
+def cli():
     parser = argparse.ArgumentParser(description='Search for enriched motifs around thresholded crosslinks in CLIP data.')
     optional = parser._action_groups.pop()
     required = parser.add_argument_group('required arguments')
@@ -114,12 +114,12 @@ def main():
     required.add_argument('-r',"--regions", type=str, required=True,
                         help='genome segmentation file produced as output of "iCount segment" function')
 
-    optional.add_argument('-k',"--kmerlength", type=int, choices=[3,4,5,6,7], default=5, nargs='?',
+    optional.add_argument('-k',"--kmerlength", type=int, choices=[4,5,6,7], default=5, nargs='?',
                         help='kmer length [DEFAULT 5]')
     optional.add_argument('-o',"--outputpath", type=str, default=os.getcwd(), nargs='?',
                         help='output folder [DEFAULT current directory]')
-    optional.add_argument('-w',"--window", type=int, default=25, nargs='?',
-                        help='window around thresholded crosslinks for finding enriched kmers [DEFAULT 25]')
+    optional.add_argument('-w',"--window", type=int, default=20, nargs='?',
+                        help='window around thresholded crosslinks for finding enriched kmers [DEFAULT 20]')
     optional.add_argument('-dw',"--distalwindow", type=int, default=150, nargs='?',
                         help='window around enriched kmers to calculate distribution [DEFAULT 150]')
     optional.add_argument('-t',"--topn", type=int, default=20, nargs='?',
@@ -139,7 +139,7 @@ def main():
                                     used for input, ie. repeats in lowercase letters.')
     optional.add_argument('-a',"--alloutputs", type=bool, default=False, nargs='?',
                         help='controls the number of outputs, can be True/False [DEFAULT False]')
-    optional.add_argument('-sr',"--specificregion", choices=["whole_gene", "intron", "UTR3", "other_exon", "UTR5", "ncRNA", "intergenic", "genome"], default=None, nargs='+',
+    optional.add_argument('-sr',"--specificregion", choices=["genome", "whole_gene", "intron", "UTR3", "other_exon", "ncRNA", "intergenic"], default=None, nargs='+',
                         required=False, help='choose to run PEKA on a specific region only, to specify multiple regions enter them space separated [DEFAULT None]')
     optional.add_argument('-sub',"--subsample", type=bool, default=True, nargs='?',
                         help='if the crosslinks file is very large, they can be subsampled to reduce runtime, can be True/False [DEFAULT True]')
@@ -148,11 +148,11 @@ def main():
     args = parser.parse_args()
     print(args)
 
-    return(args.inputpeaks, 
-        args.inputxlsites, 
-        args.genomefasta, 
-        args.genomeindex, 
-        args.regions, 
+    return(args.inputpeaks,
+        args.inputxlsites,
+        args.genomefasta,
+        args.genomeindex,
+        args.regions,
         args.kmerlength,
         args.outputpath,
         args.window,
@@ -1276,7 +1276,7 @@ def run(peak_file,
     pbt.cleanup()
     print(f"Analysis total runtime {((time.time() - start) / 60):.2f}")
 
-def cli():
+def main():
     (
         peak_file_path,
         sites_file_path,
@@ -1295,7 +1295,7 @@ def cli():
         all_outputs,
         regions,
         subsample,
-    )= main()
+    )= cli()
 
     run(
         peak_file_path,
@@ -1318,4 +1318,4 @@ def cli():
     )
 
 if __name__ == '__main__':
-    cli()
+    main()
