@@ -1,0 +1,16 @@
+peak_file	/home/klara/dev/peka_clone/TestData/inputs/K562-TIA1-chr20.xl_peaks.bed.gz
+sites_file	/home/klara/dev/peka_clone/TestData/inputs/K562-TIA1-chr20.xl.bed.gz
+regions	['intron', 'UTR3', 'whole_gene']
+kmer_length	5
+genome	/home/klara/Dropbox (The Francis Crick)/klara/genomes/masked_hg38_v30/GRCh38.p12.genome.masked.fa
+genome_index_file	/home/klara/dev/peka_clone/TestData/inputs/GRCh38.p12.genome.masked.fa.fai
+gtf_segmentation_file	/home/klara/dev/peka_clone/TestData/inputs/sorted.regions.gtf.gz
+smoothing	6
+percentile	0.7
+window	25
+window_distal	150
+n_top_motifs	20
+n_clusters	5
+repeats	unmasked
+subsample	True
+all_outputs	False
