@@ -610,7 +610,7 @@ def get_top_n_kmers(kmer_count, num):
 
 
 @ignore_warnings(category=ConvergenceWarning)
-def get_clustering(kmer_pos_count, x1, x2, kmer_length, window, smoot, n_clusters):
+def get_clustering(kmer_pos_count, x1, x2, kmer_length, window, smoot):
     """Smoothen positional data for each kmer and then cluster kmers.
 
     Prior to clustering, similarities between sequences (using Jaccard
@@ -652,21 +652,26 @@ def get_clustering(kmer_pos_count, x1, x2, kmer_length, window, smoot, n_cluster
     for cluster_id in np.unique(out.labels_):
         cluster = list(np.unique(kmers[np.nonzero(out.labels_ == cluster_id)]))
         cluster_medians = df_smooth.loc[-window:window, cluster].median()
-        cluster_medians_std.append(cluster_medians.std())
+        if len(cluster_medians) > 1:
+            # If only 1 motif is in cluster, std is nan.
+            cluster_medians_std.append(cluster_medians.std())
         c_dict[cluster_id] = cluster
-    return df_smooth, c_dict, len(np.unique(out.labels_)), sum(cluster_medians_std)
+    # reurn an average std across cluster medians. Average is a better metrics than a sum,
+    # beacuse sum favours clusters with only one k-mer, that don't increase the sum.
+    return df_smooth, c_dict, len(np.unique(out.labels_)), sum(cluster_medians_std) / len(cluster_medians_std)
 
 
 def optimize_clustering(kmer_pos_count, kmer_length, window, smoothing, clusters):
     """Optimize clustering."""
     optimal_no_clusters = []
-    for i in np.linspace(0, 10, 100):
-        for j in np.linspace(0, 10, 100):
+    for i in np.linspace(0, 10, 30):
+        for j in np.linspace(0, 10, 30):
             df_smooth, clusters_dict, no_of_clusters, cluster_medians_std = get_clustering(
-                kmer_pos_count, i, j, kmer_length, window, smoothing, clusters
+                kmer_pos_count, i, j, kmer_length, window, smoothing
             )
             optimal_no_clusters.append((no_of_clusters, i, cluster_medians_std, j))
     filtered_no_clusters = []
+    #Assign max number of clusters
     final_no_clusters = clusters
     while len(filtered_no_clusters) == 0 and final_no_clusters != 0:
         for c in optimal_no_clusters:
@@ -682,7 +687,7 @@ def optimize_clustering(kmer_pos_count, kmer_length, window, smoothing, clusters
             optimized_koef1 = c[1]
             optimized_koef2 = c[3]
     print(f"Found {final_no_clusters + 1} clusters, optimized parameters: {optimized_koef1}, {optimized_koef2}")
-    return get_clustering(kmer_pos_count, optimized_koef1, optimized_koef2, kmer_length, window, smoothing, clusters)
+    return get_clustering(kmer_pos_count, optimized_koef1, optimized_koef2, kmer_length, window, smoothing)
 
 
 def substrings(string):
