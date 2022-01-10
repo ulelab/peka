@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="PEKA",
-    version="0.1.1",
+    version="0.1.4",
     author="Aram Amalietti",
     author_email="aram.amalietti@gmail.com",
     description=(
@@ -30,5 +30,5 @@ setuptools.setup(
         "peka.py"
     ],
     python_requires=">=3.7",
-    entry_points={"console_scripts": ["peka = peka:cli",],},
+    entry_points={"console_scripts": ["peka = peka:main",],},
 )
