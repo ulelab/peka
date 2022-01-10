@@ -102,8 +102,9 @@ If you get `KeyError: 'TMPDIR'` a solution would be to type `export TMPDIR=<path
 **Outputs**
 
 The default outputs produced by PEKA for each specified genomic region are:
-- A pdf file with graphs showing k-mer occurrence distributions around thresholded crosslink sites for top n most enriched k-mers. K-mers are clustered based on their sequence and distributions.
-- A csv file with clusters of top n k-mers.
+- A pdf file with graphs showing k-mer occurrence distributions around thresholded crosslink sites for top n most enriched k-mers in the region spannig 
+-50...50 nt around thersholded crosslink sites. K-mers are clustered based on their sequence and distributions. **NOTE: Even though top k-mers are selected with respect to the user-defined window, the graphs of top k-mers are not scaled to the selected window and are always plotted in the -50...50 nt range.**
+y-axis on the plots denotes a % of thresholded crosslinks for which a particular k-mer occurs at a specified position (y-axis).
 - A tsv file with summed occurrence distributions of k-mers within defined clusters. Distributions in this file correspond to the curves on the last plot in the .pdf file.
 - A tsv file with calculated PEKA score and occurrence distribution for all possible k-mers in the window -48 to +50 around thresholded crosslinks. 
   - This file also contains several other values that are calculated for a particular k-mer during the analysis, such as:
@@ -118,6 +119,7 @@ If the option ALLOUTPUTS is set to True, the following files are also outputted 
 - a bed file of thresholded crosslink sites
 - a bed file with background crosslink sites (oxn)
 - a tsv file with relative occurrence distribution (rtxn) for all possible k-mers. Relative occurrences are obtained by dividing raw occurrences with the average k-mer occurrence in the distal region (DtXn).
+- A csv file with clusters of top n k-mers.
 
 Other outputs:
 - A tsv file with saved run parameters
