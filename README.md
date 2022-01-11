@@ -103,8 +103,12 @@ If you get `KeyError: 'TMPDIR'` a solution would be to type `export TMPDIR=<path
 
 The default outputs produced by PEKA for each specified genomic region are:
 - A pdf file with graphs showing k-mer occurrence distributions around thresholded crosslink sites for top n most enriched k-mers in the region spannig 
--50...50 nt around thersholded crosslink sites. K-mers are clustered based on their sequence and distributions. **NOTE: Even though top k-mers are selected with respect to the user-defined window, the graphs of top k-mers are not scaled to the selected window and are always plotted in the -50...50 nt range.**
-y-axis on the plots denotes a % of thresholded crosslinks for which a particular k-mer occurs at a specified position (y-axis).
+-50...50 nt around thersholded crosslink sites. K-mers are clustered based on their sequence and distributions. 
+    - **NOTE: Even though top k-mers are selected with respect to the user-defined window, the graphs of top k-mers are not scaled to the selected window and 
+    are always plotted in the -50...50 nt range.**
+    - y-axis on the plots denotes a % of thresholded crosslinks for which a particular k-mer occurs at a specified position (y-axis).
+    - **NOTE:** If clustering could not be optimized to yield less or equal to user-defined number of clusters, the number of clusters will be determined
+    automatically by the algorithm.
 - A tsv file with summed occurrence distributions of k-mers within defined clusters. Distributions in this file correspond to the curves on the last plot in the .pdf file.
 - A tsv file with calculated PEKA score and occurrence distribution for all possible k-mers in the window -48 to +50 around thresholded crosslinks. 
   - This file also contains several other values that are calculated for a particular k-mer during the analysis, such as:
