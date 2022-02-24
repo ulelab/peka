@@ -270,7 +270,7 @@ def get_regions_map(regions_file):
     df_cds_utr_ncrna.to_csv("{}/cds_utr_ncrna_regions.bed".format(TEMP_PATH), **to_csv_kwrgs)
 
 
-def remove_chr(df_in, chr_sizes, chr_name="chrM"):
+def remove_chr(df_in, chr_sizes, chr_name=["chrM", "MT"]):
     """Remove chromosomes that are not in genome annotations.
 
     Also removes ``chr_name`` from DataFrame.
@@ -279,7 +279,7 @@ def remove_chr(df_in, chr_sizes, chr_name="chrM"):
         chr_sizes, names=["chrom", "end"], sep="\t", header=None, dtype={"chrom": str, "end": int}
     )
     df_in = df_in[df_in["chrom"].isin(df_chr_sizes["chrom"].values)]
-    return df_in[~(df_in["chrom"] == chr_name)]
+    return df_in[~(df_in["chrom"].isin(chr_name))]
 
 
 def intersect(interval_file, s_file):
