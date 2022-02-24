@@ -90,7 +90,7 @@ optional arguments:
 **Common issues**
 
 If you have one of the following errors, it is because the numpy/pandas versions you are running are incompatible with PEKA.
-To ensure you are using the correct versions, we reccomend using our conda environment.
+To ensure you are using the correct versions, we recommend using our conda environment.
 ```
 AttributeError: type object 'object' has no attribute 'dtype'
 ```
@@ -98,7 +98,7 @@ or
 ```
 TypeError: sum() got an unexpected keyword argument 'axis'
 ```
-The script needs writing permission in the staging directory to save results and make an environment variable `TMPDIR` for temporary files. 
+The script needs writing permission in the staging directory to save results and make an environment variable `TMPDIR` for temporary files.
 If you get `KeyError: 'TMPDIR'` a solution would be to type `export TMPDIR=<path_to_folder>` in terminal where you want to run the script.
 
 **Outputs**
