@@ -1116,8 +1116,11 @@ def run(peak_file,
         # occurences for each kmer on relevant positions and add them to a list
         # for calculation of averages and standard deviations
         random_roxn = []
-        for _ in range(100):
+        for i in range(100):
+            # For reproducibility it is necessary to set a seed, but each instance gets it's own seed.
+            random.seed(i)
             random_seqs = random.sample(reference_sequences, len(sites))
+            # print("Random state in roxn sampling:", random.getstate())
             random_kmer_pos_count_t = pos_count_kmer(random_seqs, kmer_length, window, repeats=repeats)
             random_kmer_pos_count = {key.replace("T", "U"): value for key, value in random_kmer_pos_count_t.items()}
             if repeats == "masked" or repeats == "repeats_only":

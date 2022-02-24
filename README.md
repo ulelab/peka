@@ -44,6 +44,8 @@ usage: peka.py [-h] -i INPUTPEAKS -x INPUTXLSITES -g GENOMEFASTA -gi GENOMEINDEX
 
 Search for enriched motifs around thresholded crosslinks in CLIP data.
 
+**IMPORTANT NOTE!** Make sure all the required inputs, i.e. bed files, genome in fasta format, genome index and regions file, follow the same naming convention for chromosome names. Either all files must use the UCSC (GENCODE) naming convention, which prefixes chromosome names with "chr" ("chr1", ..., "chrM") or all files should use Ensembl naming convention ("1", ..., "MT").
+
 required arguments:
   -i INPUTPEAKS, --inputpeaks INPUTPEAKS
                         CLIP peaks (intervals of crosslinks) in BED file format
