@@ -85,6 +85,9 @@ optional arguments:
                         choose to run PEKA on a specific region only, to specify multiple regions enter them space separated [DEFAULT None]
   -sub [SUBSAMPLE], --subsample [SUBSAMPLE]
                         if the crosslinks file is large, they can be subsampled to reduce runtime, can be True/False, recommended is True [DEFAULT True]
+  -seed [SET_SEEDS], --set_seeds [SET_SEEDS]
+                      If you want to ensure reproducibility of results the flag --set_seeds must be set to True.
+                      Can be True or False [DEFAULT True]. Note that setting seeds reduces the randomness of background sampling.
 ```
 
 **Common issues**

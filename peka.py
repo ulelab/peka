@@ -144,6 +144,9 @@ def cli():
                         required=False, help='choose to run PEKA on a specific region only, to specify multiple regions enter them space separated [DEFAULT None]')
     optional.add_argument('-sub',"--subsample", dest='subsample', default='True', type=lambda x:bool(strtobool(x)),
                         help='if the crosslinks file is very large, they can be subsampled to reduce runtime, can be True/False [DEFAULT True]')
+    optional.add_argument('-seed',"--set_seeds", dest='set_seeds', default='True', type=lambda x:bool(strtobool(x)),
+                        help='If you want to ensure reproducibility of results the option set_seeds must be set to True. Can be True or False [DEFAULT True]. \n \
+                        Note that setting seeds reduces the randomness of background sampling.')
 
     parser._action_groups.append(optional)
     args = parser.parse_args()
@@ -165,7 +168,8 @@ def cli():
         args.repeats,
         args.alloutputs,
         args.specificregion,
-        args.subsample)
+        args.subsample,
+        args.set_seeds)
 
 
 # overriding pybedtools to_dataframe method to avoid warning
@@ -938,7 +942,8 @@ def run(peak_file,
     repeats,
     all_outputs,
     regions,
-    subsample
+    subsample,
+    set_seeds
 ):
     """Start the analysis.
 
@@ -1118,7 +1123,8 @@ def run(peak_file,
         random_roxn = []
         for i in range(100):
             # For reproducibility it is necessary to set a seed, but each instance gets it's own seed.
-            random.seed(i)
+            if set_seeds:
+                random.seed(i)
             random_seqs = random.sample(reference_sequences, len(sites))
             # print("Random state in roxn sampling:", random.getstate())
             random_kmer_pos_count_t = pos_count_kmer(random_seqs, kmer_length, window, repeats=repeats)
@@ -1304,6 +1310,7 @@ def main():
         all_outputs,
         regions,
         subsample,
+        set_seeds
     ) = cli()
 
     run(
@@ -1324,6 +1331,7 @@ def main():
         all_outputs,
         regions,
         subsample,
+        set_seeds
     )
 
 if __name__ == '__main__':
