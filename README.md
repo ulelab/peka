@@ -44,6 +44,8 @@ usage: peka.py [-h] -i INPUTPEAKS -x INPUTXLSITES -g GENOMEFASTA -gi GENOMEINDEX
 
 Search for enriched motifs around thresholded crosslinks in CLIP data.
 
+**IMPORTANT NOTE!** Make sure all the required inputs, i.e. bed files, genome in fasta format, genome index and regions file, follow the same naming convention for chromosome names. Either all files must use the UCSC (GENCODE) naming convention, which prefixes chromosome names with "chr" ("chr1", ..., "chrM") or all files should use Ensembl naming convention ("1", ..., "MT").
+
 required arguments:
   -i INPUTPEAKS, --inputpeaks INPUTPEAKS
                         CLIP peaks (intervals of crosslinks) in BED file format
@@ -83,12 +85,15 @@ optional arguments:
                         choose to run PEKA on a specific region only, to specify multiple regions enter them space separated [DEFAULT None]
   -sub [SUBSAMPLE], --subsample [SUBSAMPLE]
                         if the crosslinks file is large, they can be subsampled to reduce runtime, can be True/False, recommended is True [DEFAULT True]
+  -seed [SET_SEEDS], --set_seeds [SET_SEEDS]
+                      If you want to ensure reproducibility of results the flag --set_seeds must be set to True.
+                      Can be True or False [DEFAULT True]. Note that setting seeds reduces the randomness of background sampling.
 ```
 
 **Common issues**
 
 If you have one of the following errors, it is because the numpy/pandas versions you are running are incompatible with PEKA.
-To ensure you are using the correct versions, we reccomend using our conda environment.
+To ensure you are using the correct versions, we recommend using our conda environment.
 ```
 AttributeError: type object 'object' has no attribute 'dtype'
 ```
@@ -96,7 +101,7 @@ or
 ```
 TypeError: sum() got an unexpected keyword argument 'axis'
 ```
-The script needs writing permission in the staging directory to save results and make an environment variable `TMPDIR` for temporary files. 
+The script needs writing permission in the staging directory to save results and make an environment variable `TMPDIR` for temporary files.
 If you get `KeyError: 'TMPDIR'` a solution would be to type `export TMPDIR=<path_to_folder>` in terminal where you want to run the script.
 
 **Outputs**
