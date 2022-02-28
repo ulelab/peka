@@ -427,7 +427,7 @@ def get_threshold_sites(s_file, percentile=0.7):
     """Apply crosslink filtering based on dynamical thresholds.
 
     Regions for thresholds are defined as follows: introns and
-    intergenic regions are each idts own region, for CDS, UTR and ncRNA
+    intergenic regions are each it's own region, for CDS, UTR and ncRNA
     each gene is a region. After region determination threshold based on
     percentile are applied and finally threshold crosslinks sites are
     sorted.
@@ -442,13 +442,21 @@ def get_threshold_sites(s_file, percentile=0.7):
         print(f"lenght of df_reg for {region} is: {len(df_reg)}")
         if region == "cds_utr_ncrna":
             df_reg.name = df_reg.attributes.map(lambda x: x.split(";")[1].split(" ")[1].strip('"'))
-            df_reg["quantile"] = df_reg["name"].map(df_reg.groupby(["name"]).quantile(q=percentile)["score"])
+            # If percentile is set to 0, thresholds for tXn are also set to 0.
+            if percentile == 0:
+                df_reg["quantile"] = 0
+            # If percentile is >0, score threshold is determined for each gene.
+            else:
+                df_reg["quantile"] = df_reg["name"].map(df_reg.groupby(["name"]).quantile(q=percentile)["score"])
             df_filtered = df_reg[df_reg["score"] > df_reg["quantile"]].drop(columns=["quantile"])
             df_out = pd.concat([df_out, df_filtered], ignore_index=True, sort=False)
         if region in ["intron", "intergenic"]:
             df_region = parse_region_to_df(REGIONS_MAP[region])
             df_cut = cut_sites_with_region(df_reg, df_region)
-            df_filtered = percentile_filter_xlinks(df_cut)
+            if percentile == 0:
+                df_filtered = df_cut.copy()
+            else:
+                df_filtered = percentile_filter_xlinks(df_cut, percentile=percentile)
             df_out = pd.concat([df_out, df_filtered], ignore_index=True, sort=False)
         print(f"Thresholding {region} runtime: {((time.time() - region_threshold_cp) / 60):.2f} min")
     return df_out.sort_values(by=["chrom", "start", "strand"], ascending=[True, True, True]).reset_index(drop=True)
