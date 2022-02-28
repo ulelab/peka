@@ -39,13 +39,13 @@ This command is also useful for installing development versions of PEKA.
 
 **Usage**:
 ```
-usage: peka.py [-h] -i INPUTPEAKS -x INPUTXLSITES -g GENOMEFASTA -gi GENOMEINDEX -r REGIONS [-k [{4,5,6,7}]] [-o [OUTPUTPATH]] [-w [WINDOW]] [-dw [DISTALWINDOW]] [-t [TOPN]] [-p [PERCENTILE]] [-c [CLUSTERS]] [-s [SMOOTHING]]
+python3 peka.py [-h] -i INPUTPEAKS -x INPUTXLSITES -g GENOMEFASTA -gi GENOMEINDEX -r REGIONS [-k [{4,5,6,7}]] [-o [OUTPUTPATH]] [-w [WINDOW]] [-dw [DISTALWINDOW]] [-t [TOPN]] [-p [PERCENTILE]] [-c [CLUSTERS]] [-s [SMOOTHING]]
                [-re [{masked,unmasked,repeats_only,remove_repeats}]] [-a [ALLOUTPUTS]] [-sr [{genome,whole_gene,intron,UTR3,other_exon,ncRNA,intergenic}]] [-sub [SUBSAMPLE]]
+```
 
-Search for enriched motifs around thresholded crosslinks in CLIP data.
+🔴 **IMPORTANT NOTE!** Make sure all the required inputs, i.e. bed files, genome in fasta format, genome index and regions file, follow the same naming convention for chromosome names. Either all files must use the UCSC (GENCODE) naming convention, which prefixes chromosome names with "chr" ("chr1", ..., "chrM") or all files should use Ensembl naming convention ("1", ..., "MT").
 
-**IMPORTANT NOTE!** Make sure all the required inputs, i.e. bed files, genome in fasta format, genome index and regions file, follow the same naming convention for chromosome names. Either all files must use the UCSC (GENCODE) naming convention, which prefixes chromosome names with "chr" ("chr1", ..., "chrM") or all files should use Ensembl naming convention ("1", ..., "MT").
-
+```
 required arguments:
   -i INPUTPEAKS, --inputpeaks INPUTPEAKS
                         CLIP peaks (intervals of crosslinks) in BED file format
