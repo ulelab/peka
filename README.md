@@ -2,11 +2,12 @@
 Positionally-enriched k-mer analysis (PEKA) is a software package for identifying enriched protein-RNA binding motifs from CLIP datasets. PEKA compares k-mer enrichment in proximity of high-confidence crosslink sites (tXn - thresholded crosslinks), located within crosslinking peaks and having a high cDNA count, relative to low-count crosslink sites located outside of peaks (oXn - outside crosslinks). This approach reduces the effects of technical biases, such as uridine-preference of UV crosslinking. Each k-mer is assigned a PEKA score, which is used to rank the k-mers from the most to the least enriched. Additionally, PEKA provides comprehensive visualisations of motif enrichment profiles around the high-confidence crosslink sites and clusters the motifs that display similar profiles. PEKA also enables motif discovery within specific transcriptomic regions, including or excluding repetitive elements.
 
 To interactively explore PEKA applied to all ENCODE eCLIP data, visit [iMaps](https://imaps.goodwright.org/apps/peka/).
+For a more detailed description of PEKA method please refer to our preprint https://www.biorxiv.org/content/10.1101/2021.12.07.471544v1.
 
 Author: aram.amalietti@gmail.com
 
 
-**Dependencies** (due to a breaking change in pandas >=1 using the versions below is recommended):
+## Dependencies (due to a breaking change in pandas >=1 using the versions below is recommended):
 ```
 python=3.7
 matplotlib=3.1.2
@@ -20,7 +21,7 @@ pandas=0.24.2
 textdistance=4.1.3
 ```
 
-**Set up**:
+## Set up
 
 We recommend running PEKA in a conda environment so all the dependencies are managed for you, to set this up run the following command from your PEKA directory:
 ```
@@ -37,7 +38,7 @@ python -m pip install . -vv --ignore-installed --no-deps
 ```
 This command is also useful for installing development versions of PEKA.
 
-**Usage**:
+## Usage
 ```
 python3 peka.py [-h] -i INPUTPEAKS -x INPUTXLSITES -g GENOMEFASTA -gi GENOMEINDEX -r REGIONS [-k [{4,5,6,7}]] [-o [OUTPUTPATH]] [-w [WINDOW]] [-dw [DISTALWINDOW]] [-t [TOPN]] [-p [PERCENTILE]] [-c [CLUSTERS]] [-s [SMOOTHING]]
                [-re [{masked,unmasked,repeats_only,remove_repeats}]] [-a [ALLOUTPUTS]] [-sr [{genome,whole_gene,intron,UTR3,other_exon,ncRNA,intergenic}]] [-sub [SUBSAMPLE]]
@@ -90,7 +91,7 @@ optional arguments:
                       Can be True or False [DEFAULT True]. Note that setting seeds reduces the randomness of background sampling.
 ```
 
-**Common issues**
+## Common issues
 
 If you have one of the following errors, it is because the numpy/pandas versions you are running are incompatible with PEKA.
 To ensure you are using the correct versions, we recommend using our conda environment.
@@ -104,7 +105,7 @@ TypeError: sum() got an unexpected keyword argument 'axis'
 The script needs writing permission in the staging directory to save results and make an environment variable `TMPDIR` for temporary files.
 If you get `KeyError: 'TMPDIR'` a solution would be to type `export TMPDIR=<path_to_folder>` in terminal where you want to run the script.
 
-**Outputs**
+## Outputs
 
 The default outputs produced by PEKA for each specified genomic region are:
 - A pdf file with graphs showing k-mer occurrence distributions around thresholded crosslink sites for top n most enriched k-mers in the region spannig 
@@ -132,3 +133,24 @@ If the option ALLOUTPUTS is set to True, the following files are also outputted 
 
 Other outputs:
 - A tsv file with saved run parameters
+
+## Plotting k-mer relative occurrences in heatmap format (preprint)
+To produce k-mer relative occurrence heatmaps as shown in Figure 1g of our preprint https://www.biorxiv.org/content/10.1101/2021.12.07.471544v1, 
+use the script plotRelativeOccurrenceHeatmap.py in peka environment as follows:
+```
+# Example of run command
+python3 ./src/plotRelativeOccurrenceHeatmap.py \
+PathToKmerOccurrenceTable \
+PathToKmerRtxnTable \
+PathToOutputDirectory \
+WindowAroundCrosslinkSite\
+NumberOfTopKmers
+```
+### Arguments
+PathToKmerOccurrenceTable -  file with k-mer PEKA-scores *5mer_distribution_whole_gene.tsv* <br>
+PathToKmerRtxnTable - file with k-mer relative occurrences *5mer_rtxn_whole_gene.tsv* <br>
+PathToOutputDirectory - location to which files will be saved <br>
+WindowAroundCrosslinkSite - n nucleotides up and downstream from crosslink to plot <br>
+NumberOfTopKmers - n top k-mers to plot <br>
+
+To run on test data head to _TestData/RelativeOccurrenceHeatmap_
