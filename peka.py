@@ -603,11 +603,6 @@ def get_average_poscount(pos_c):
     return avg
 
 
-def get_top_n_kmers(kmer_count, num):
-    """Get a list of top_n most frequent kmers."""
-    return [item[0] for item in sorted(kmer_count.items(), key=lambda x: x[1], reverse=True)[:num]]
-
-
 @ignore_warnings(category=ConvergenceWarning)
 def get_clustering(kmer_pos_count, x1, x2, kmer_length, window, smoot):
     """Smoothen positional data for each kmer and then cluster kmers.
@@ -1226,8 +1221,7 @@ def run(peak_file,
         # around -50 to 50 are also added to outfile table which is then finnaly
         # written to file
         # get order of z-scores to select top kmers to plot
-        kmers_order_of_enrichment = get_top_n_kmers(z_score, 4 ** kmer_length)
-        top_kmers = kmers_order_of_enrichment[:top_n]
+        top_kmers = df_out.sort_values(by='PEKA-score', ascending=False).index.tolist()[:top_n]
         # normalize kmer occurences by number of thresholded crosslinks for
         # easier comparison across different samples
         kmer_occ_per_txl = {x: {} for x in kmer_pos_count}
