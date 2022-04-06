@@ -916,11 +916,11 @@ def plot_positional_distribution(df_in, df_sum, c_dict, c_rank, name, cluster_re
     sns.lineplot(data=df_ordered, ax=axs[axs_x_sumplt, axs_y_sumplt], ci=None, **lineplot_kwrgs)
     fig.savefig(f"{output_path}/{name}_{kmer_length}mer_{region}.pdf", format="pdf")
 
-def run(peak_file, 
-    sites_file, 
-    genome, 
-    genome_fai, 
-    regions_file, 
+def run(peak_file,
+    sites_file,
+    genome,
+    genome_fai,
+    regions_file,
     kmer_length,
     output_path,
     window,
@@ -958,8 +958,8 @@ def run(peak_file,
     - all_outputs: controls the amount of outputs produced in the analysis
     - subsample: whether or not to subsample crosslinks
     - repeats: how to treat repeating regions within genome
-    (options: 'masked', 'unmasked', 'repeats_only'). When applying 
-    any of the options with the exception of repeats == 'unmasked', a genome with masked 
+    (options: 'masked', 'unmasked', 'repeats_only'). When applying
+    any of the options with the exception of repeats == 'unmasked', a genome with masked
     repeat sequences should be used for input.
     """
     start = time.time()
@@ -977,22 +977,22 @@ def run(peak_file,
         "cds_utr_ncrna": "{}/cds_utr_ncrna_regions.bed".format(TEMP_PATH),
     }
     # Save run parameters into file
-    df_params = pd.Series(data={"peak_file": peak_file, 
-                            "sites_file": sites_file, 
-                            "regions": regions, 
-                            "kmer_length": kmer_length, 
-                            "genome": genome, 
-                            "genome_index_file": genome_fai, 
+    df_params = pd.Series(data={"peak_file": peak_file,
+                            "sites_file": sites_file,
+                            "regions": regions,
+                            "kmer_length": kmer_length,
+                            "genome": genome,
+                            "genome_index_file": genome_fai,
                             "gtf_segmentation_file": regions_file,
-                            "smoothing": smoothing, 
-                            "percentile": percentile, 
-                            "window": window, 
-                            "window_distal": window_distal, 
-                            "n_top_motifs": top_n, 
-                            "n_clusters": clusters, 
-                            "repeats" : repeats, 
-                            "subsample": subsample, 
-                            "all_outputs": all_outputs, 
+                            "smoothing": smoothing,
+                            "percentile": percentile,
+                            "window": window,
+                            "window_distal": window_distal,
+                            "n_top_motifs": top_n,
+                            "n_clusters": clusters,
+                            "repeats" : repeats,
+                            "subsample": subsample,
+                            "all_outputs": all_outputs,
                             })
 
     df_params.to_csv(f'{output_path}/{sample_name}_run_parameters.tsv', sep='\t', header=False)
@@ -1037,7 +1037,7 @@ def run(peak_file,
             sites.saveas(f'{output_path}/{sample_name}_thresholded_sites_{region}.bed.gz')
         # only continue analysis for region with over 100 thresholded sites
         if len(sites) < 100:
-            print(f"less then 100 thresholded crosslink in {region}")
+            print(f"less then 100 thresholded crosslink in {region}. Skipping {region}.")
             continue
         all_sites = pbt.BedTool.from_dataframe(df_xn_region[["chrom", "start", "end", "name", "score", "strand"]])
         # finds all crosslink sites that are not in peaks as reference for
@@ -1174,17 +1174,17 @@ def run(peak_file,
         for key, value in prtxn.items():
             prtxn_concat[key] = ", ".join([str(i) for i in value])
         df_prtxn = pd.DataFrame.from_dict(prtxn_concat, orient="index", columns=["prtxn"])
-        df_out = pd.merge(df_out, df_prtxn, left_index=True, right_index=True)
+        df_out = pd.merge(df_out, df_prtxn, left_index=True, right_index=True, how='outer')
         # calculate average relative occurences for each kmer around thresholded
         # crosslinks across relevant positions and add it to outfile table
         artxn = {x: np.mean([rtxn[x][y] for y in prtxn[x]]) for x in rtxn}
         df_artxn = pd.DataFrame.from_dict(artxn, orient="index", columns=["artxn"])
-        df_out = pd.merge(df_out, df_artxn, left_index=True, right_index=True)
+        df_out = pd.merge(df_out, df_artxn, left_index=True, right_index=True, how='outer')
         # calculate average relative occurences for each kmer around reference
         # crosslinks across relevant positions and add it to outfile table
         aroxn = {x: np.mean([roxn[x][y] for y in prtxn[x] if y in roxn[x].keys()]) for x in roxn}
         df_aroxn = pd.DataFrame.from_dict(aroxn, orient="index", columns=["aroxn"])
-        df_out = pd.merge(df_out, df_aroxn, left_index=True, right_index=True)
+        df_out = pd.merge(df_out, df_aroxn, left_index=True, right_index=True, how='outer')
         # calculate log2 of ratio between average relative occurences between
         # thresholded and reference crosslinks, this ratio, colaculated for each
         # kmer is called enrichement and is added to outfile table
@@ -1218,7 +1218,7 @@ def run(peak_file,
         # then added to outfile table
         # df_out["p-value"] = scipy.special.ndtr(-df_out["PEKA-score"])
         # kmer positional occurences around thresholded crosslinks on positions
-        # around -50 to 50 are also added to outfile table which is then finnaly
+        # around -50 to 50 are also added to outfile table which is then finally
         # written to file
         # get order of z-scores to select top kmers to plot
         top_kmers = df_out.sort_values(by='PEKA-score', ascending=False).index.tolist()[:top_n]
