@@ -1161,10 +1161,7 @@ def run(peak_file,
                         prtxn[kmer].append(pos)
                 except KeyError:
                     pass
-        # Assigns the max_p to kmers with empty prtxn list
-        for i, val in prtxn.items():
-            if len(val) == 0:
-                val.append(max_p[i])
+        # Leave an empty list for prtxn if none of the positions passed the relevant positions threshold
         random_aroxn = []
         for roxn_sample in random_roxn:
             aroxn_sample = {
