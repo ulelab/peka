@@ -547,19 +547,6 @@ def pos_count_kmer(seqs, k_length, window, repeats, kmer_list=False):
     return kmer_pos_count
 
 
-def normalise_kmer_frequency(observed, reference):
-    """Normalize kmer counts - divide observed with reference counts."""
-    normalised = {}
-    for kmer, count in observed.items():
-        # In short regions of the reference there could be 0 of certain kmers.
-        # In such case, just normalize with 1.
-        try:
-            normalised[kmer] = count / reference[kmer] * 10 ** 6
-        except ZeroDivisionError:
-            normalised[kmer] = count * 10 ** 6
-    return normalised
-
-
 def get_max_pos(pos_count, window_peak_l=15, window_peak_r=15):
     """Return position with max values for every kmer in the dictionary."""
     max_pos = {}
