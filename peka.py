@@ -1062,6 +1062,7 @@ def run(peak_file,
         )
         if repeats == "unmasked":
             sequences = [s.upper() for s in sequences]
+            reference_sequences = [s.upper() for s in reference_sequences]
         get_sequences_cp = time.time()
         # get positional counts for all kmers around thresholded crosslinks
         kmer_pos_count_t = pos_count_kmer(sequences, kmer_length, window_distal, repeats=repeats)
