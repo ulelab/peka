@@ -1093,6 +1093,8 @@ def run(peak_file,
         avg_distal_occ = {}
         for key, value in distal.items():
             avg_distal_occ[key] = sum(value.values()) / len(value)
+        # Calculate minimal average distal occurrence for handling ZeroDivisionError
+        min_distal = min([ v for v in avg_distal_occ.values() if v != 0])
         # occurences of kmers on each position around thresholded crosslinks
         # relative to distal occurences
         rtxn = {x: {} for x in kmer_pos_count}
@@ -1101,7 +1103,7 @@ def run(peak_file,
                 try:
                     rtxn[motif][pos] = count / avg_distal_occ[motif]
                 except ZeroDivisionError:
-                    rtxn[motif][pos] = count / 0.005
+                    rtxn[motif][pos] = count / min_distal
         rtxn_cp = time.time()
         # get positional counts for all kmers around all crosslink not in peaks
         ref_pc_t = pos_count_kmer(reference_sequences, kmer_length, window, repeats=repeats)
@@ -1117,7 +1119,7 @@ def run(peak_file,
                 try:
                     roxn[motif][pos] = (count * ntxn) / (avg_distal_occ[motif] * noxn)
                 except ZeroDivisionError:
-                    roxn[motif][pos] = (count * ntxn) / (noxn * 0.005)
+                    roxn[motif][pos] = (count * ntxn) / (noxn * min_distal)
 
         # for z-score calculation random samples from crosslink out of peaks
         # (reference) are used and for each sample we calculate average relative
@@ -1142,7 +1144,7 @@ def run(peak_file,
                     try:
                         roxn_sample[motif][pos] = count / avg_distal_occ[motif]
                     except ZeroDivisionError:
-                        roxn_sample[motif][pos] = count / 0.005
+                        roxn_sample[motif][pos] = count / min_distal
             random_roxn.append(roxn_sample)
 
         temp_combined_roxn = {}
@@ -1198,6 +1200,9 @@ def run(peak_file,
         # calculate log2 of ratio between average relative occurences between
         # thresholded and reference crosslinks, this ratio, colaculated for each
         # kmer is called enrichement and is added to outfile table
+        df_out['etxn'] = df_out.apply(
+            lambda row: np.log2(row.artxn / row.aroxn) if (row.aroxn != 0 and row.artxn != 0) else np.nan, axis=1
+            )
         artxn = {x: artxn[x] for x in artxn if not np.isnan(artxn[x])}
         etxn = {x: np.log2(artxn[x] / aroxn[x]) for x in artxn}
         df_etxn = pd.DataFrame.from_dict(etxn, orient="index", columns=["etxn"])
@@ -1218,10 +1223,18 @@ def run(peak_file,
             random_std[key] = np.std(value)
         z_score = {}
         for key, value in random_avg.items():
+            with np.errstate(divide='raise'):
+                # Raises error, not just a print a warning, so we can catch exception
             try:
                 z_score[key] = (artxn[key] - value) / random_std[key]
             except KeyError:
-                pass
+                    # If there is no artxn entry for a given k-mer (due to absence of prtxn), then no PEKA-score is assigned.
+                    print('Not found in foreground:', key)
+                    z_score[key] = np.nan
+                except FloatingPointError:
+                    # In case of division by zero, no PEKA-score is assigned.
+                    print('Not found in background:', key)
+                    z_score[key] = np.nan
         df_z_score = pd.DataFrame.from_dict(z_score, orient="index", columns=["PEKA-score"])
         df_out = pd.merge(df_out, df_z_score, left_index=True, right_index=True, how="outer")
         # using z-score we can also calculate p-values for each motif which are
