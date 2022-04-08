@@ -142,6 +142,22 @@ def cli():
                         When applying any of the options with the exception of repeats == "unmasked", a genome with soft-masked
                         repeat sequences should be used for input, ie. repeats in lowercase letters.
                         """)
+
+    exclusiveFlags = parser.add_mutually_exclusive_group()
+    exclusiveFlags.add_argument('-pos', '--relevant_pos_threshold', dest='relevant_pos_threshold', nargs='?', type=float,
+                        help="""
+                        Percentile to set as threshold for relevant positions.
+                        Accepted values are between 0 and 99 [0, 99].
+                        If threshold is set to 0 then all positions within the set window will be considered for enrichment calculation.
+                        If threshold is not zero, it will be used to determine relevant positions for enrichment calculation for each k-mer.
+                        If the -pos option is not set, then the threshold will be automatically assigned based on k-mer lengthand number of crosslinks in region.
+                        """)
+    exclusiveFlags.add_argument('-relax', '--relaxed_prtxn', dest='relaxed_prtxn', default='True', type=lambda x:bool(strtobool(x)),
+                        help="""
+                        Whether to relax automatically calculated prtxn threshold or not. Relaxed means more positions will be included for PEKA-score calculation.
+                        Using relaxed threshold is recommended with data of lower complexity.
+                        Can't be used together with -pos flag, which sets a fixed threshold for relevant positions.
+                        """)
     optional.add_argument('-a',"--alloutputs", dest='alloutputs', default='False', type=lambda x:bool(strtobool(x)),
                         help='controls the number of outputs, can be True or False [DEFAULT False]')
     optional.add_argument('-sr',"--specificregion", choices=["genome", "whole_gene", "intron", "UTR3", "other_exon", "ncRNA", "intergenic"], default=None, nargs='+',
@@ -177,6 +193,8 @@ def cli():
         args.clusters,
         args.smoothing,
         args.repeats,
+        args.relevant_pos_threshold,
+        args.relaxed_prtxn,
         args.alloutputs,
         args.specificregion,
         args.subsample,
@@ -942,6 +960,8 @@ def run(peak_file,
     clusters,
     smoothing,
     repeats,
+    prtxn_conf,
+    relaxed,
     all_outputs,
     regions,
     subsample,
@@ -1003,6 +1023,8 @@ def run(peak_file,
                             "n_top_motifs": top_n,
                             "n_clusters": clusters,
                             "repeats" : repeats,
+                            "relevant_pos_threshold": prtxn_conf,
+                            "relaxed": relaxed,
                             "subsample": subsample,
                             "all_outputs": all_outputs,
                             })
@@ -1165,7 +1187,63 @@ def run(peak_file,
                         temp_combined_roxn[pos] = previous
                     except KeyError:
                         continue
+
+        # Determine prtxn threshold based on random roxn
+        if prtxn_conf is not None:
+            pass
+        else:
+            percentageZero = {}
+            for pos, values in temp_combined_roxn.items():
+                percentageZero[pos] = values.count(0) * 100 / len(values)
+            # probability that a k-mer was found at least once at a particular position in the random roxn sample
+            n_possible_kmers = len(kmer_pos_count.keys())
+            print('Number of possible k-mers:', n_possible_kmers)
+            P_kmer_at_pos = (1 - ((n_possible_kmers - 1) / (n_possible_kmers)) ** (ntxn))
+            P_kmer_at_pos = round(P_kmer_at_pos * 100, 2)
+            print('Probability (%) that k-mer was found at position in sampled roxn (rounded to 2 decimal points):', P_kmer_at_pos)
+            if int(P_kmer_at_pos) == 100:
+                # Maximal threshold is 99 %, 100% threshold would result in no positions assigned to k-mers
+                P_kmer_at_pos = 99
+            else:
+                P_kmer_at_pos = int(P_kmer_at_pos)
+
+            relaxThreshold = int(P_kmer_at_pos / 10) * 10
+
+            print('strict prtxn threshold:', P_kmer_at_pos)
+            print('relaxed prtxn threshold:', relaxThreshold)
+            print('minimal percentage of 0-values across positions:', np.min(list(percentageZero.values())))
+            print('Zero percentage:', percentageZero)
+
+            if relaxed:
+                if relaxThreshold > np.min(list(percentageZero.values())):
+                    # Using relaxed threshold
+                    prtxn_conf = relaxThreshold
+                elif P_kmer_at_pos > round(np.min(list(percentageZero.values())), 2):
+                    # Using strict threshold
+                    prtxn_conf = P_kmer_at_pos
+                else:
+                    # Use all positions within a window for peka score calculation
+                    print('All positions will be used to calculate PEKA-score.')
+                    prtxn_conf = 0
+            else:
+                prtxn_conf = P_kmer_at_pos
+            # if kmer_length <= 4:
+            #     prtxn_conf = 66
+            # elif kmer_length <= 6:
+            #     prtxn_conf = 80
+            # else:
+            #     prtxn_conf = 99
+        print('prtxn confidence:', prtxn_conf)
+
         threshold = {pos: np.percentile(values, prtxn_conf, axis=0) for pos, values in temp_combined_roxn.items()}
+        import json
+        print('saving files')
+        with open(f"{output_path}/thresholds.txt", "w") as fp:
+            json.dump(threshold, fp)
+
+        with open(f"{output_path}/pos_roxn.txt", "w") as fp:
+            json.dump(temp_combined_roxn, fp)
+
         prtxn = {x: [] for x in rtxn}
         for kmer, posm in rtxn.items():
             for pos, val in posm.items():
@@ -1204,9 +1282,6 @@ def run(peak_file,
             )
         # Removes k-mers where artxn is nan
         artxn = {x: artxn[x] for x in artxn if not np.isnan(artxn[x])}
-        etxn = {x: np.log2(artxn[x] / aroxn[x]) for x in artxn}
-        df_etxn = pd.DataFrame.from_dict(etxn, orient="index", columns=["etxn"])
-        df_out = pd.merge(df_out, df_etxn, left_index=True, right_index=True, how="outer")
         # average relative occurence obtained with random sampling are combined
         # in a structure that can be then used for calculating averages,
         # standard deviations and finaly the z-score
@@ -1225,9 +1300,9 @@ def run(peak_file,
         for key, value in random_avg.items():
             with np.errstate(divide='raise'):
                 # Raises error, not just a print a warning, so we can catch exception
-            try:
-                z_score[key] = (artxn[key] - value) / random_std[key]
-            except KeyError:
+                try:
+                    z_score[key] = (artxn[key] - value) / random_std[key]
+                except KeyError:
                     # If there is no artxn entry for a given k-mer (due to absence of prtxn), then no PEKA-score is assigned.
                     print('Not found in foreground:', key)
                     z_score[key] = np.nan
@@ -1239,7 +1314,7 @@ def run(peak_file,
         df_out = pd.merge(df_out, df_z_score, left_index=True, right_index=True, how="outer")
         # using z-score we can also calculate p-values for each motif which are
         # then added to outfile table
-        # df_out["p-value"] = scipy.special.ndtr(-df_out["PEKA-score"])
+        df_out["p-value"] = scipy.special.ndtr(-df_out["PEKA-score"])
         # kmer positional occurences around thresholded crosslinks on positions
         # around -50 to 50 are also added to outfile table which is then finally
         # written to file
@@ -1319,6 +1394,8 @@ def main():
         clusters,
         smoothing,
         repeats,
+        prtxn_conf,
+        relaxed,
         all_outputs,
         regions,
         subsample,
@@ -1340,6 +1417,8 @@ def main():
         clusters,
         smoothing,
         repeats,
+        prtxn_conf,
+        relaxed,
         all_outputs,
         regions,
         subsample,
