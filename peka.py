@@ -837,6 +837,7 @@ def get_clusters_name(c_dict):
     """
     c_con_dict = {}
     for cluster_id, kmers_list in c_dict.items():
+        kmers_list = [k.upper() for k in kmers_list]
         if len(kmers_list) == 1:
             # if there is only one kmer in a cluster than cluster name is kmer
             c_con_dict[cluster_id] = kmers_list[0]
@@ -1080,7 +1081,7 @@ def run(peak_file,
         print(f"Kmer positional counting runtime: {((time.time() - get_sequences_cp) / 60):.2f} min")
         kmer_pos_count = {key.replace("T", "U"): value for key, value in kmer_pos_count_t.items()}
         if repeats == "masked" or repeats == "repeats_only":
-            kmer_pos_count = {key.replace("t", "u"): value for key, value in kmer_pos_count_t.items()}
+            kmer_pos_count = {key.replace("t", "u").replace("T", "U"): value for key, value in kmer_pos_count_t.items()}
         # get position where the kmer count is maximal
         max_p = get_max_pos(kmer_pos_count, window_peak_l=15, window_peak_r=15)
         # prepare dataframe for outfile
@@ -1107,7 +1108,7 @@ def run(peak_file,
         print(f"Reference positional counts runtime: {((time.time() - rtxn_cp) / 60):.2f} min")
         ref_pc = {key.replace("T", "U"): value for key, value in ref_pc_t.items()}
         if repeats == "masked" or repeats == "repeats_only":
-            ref_pc = {key.replace("t", "u"): value for key, value in ref_pc_t.items()}
+            ref_pc = {key.replace("t", "u").replace("T", "U"): value for key, value in ref_pc_t.items()}
         # occurences of kmers on each position around all crosslinks not in
         # peaks (reference) relative to distal occurences
         roxn = {x: {} for x in ref_pc}
@@ -1133,7 +1134,7 @@ def run(peak_file,
             random_kmer_pos_count = {key.replace("T", "U"): value for key, value in random_kmer_pos_count_t.items()}
             if repeats == "masked" or repeats == "repeats_only":
                 random_kmer_pos_count = {
-                    key.replace("t", "u"): value for key, value in random_kmer_pos_count_t.items()
+                    key.replace("t", "u").replace("T", "U"): value for key, value in random_kmer_pos_count_t.items()
                 }
             roxn_sample = {x: {} for x in random_kmer_pos_count}
             for motif, pos_m in random_kmer_pos_count.items():
