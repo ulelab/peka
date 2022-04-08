@@ -126,27 +126,38 @@ def cli():
     optional.add_argument('-t',"--topn", type=int, default=20, nargs='?',
                         help='number of kmers ranked by z-score in descending order for clustering and plotting [DEFAULT 20]')
     optional.add_argument('-p',"--percentile", type=float, default=0.7, nargs='?',
-                        help='percentile for considering thresholded crosslinks eg. percentile 0.7 means \n \
-                            that a cDNA count threshold is determined at which >=70 percent of the crosslink sites within the region \n \
-                            have a cDNA count equal or below the threshold. Thresholded crosslinks have cDNA count above the threshold [DEFAULT 0.7]')
+                        help="""
+                        percentile for considering thresholded crosslinks eg. percentile 0.7 means
+                        that a cDNA count threshold is determined at which >=70 percent of the crosslink
+                        sites within the region have a cDNA count equal or below the threshold.
+                        Thresholded crosslinks have cDNA count above the threshold [DEFAULT 0.7]
+                        """)
     optional.add_argument('-c',"--clusters", type=int, default=5, nargs='?',
                         help='how many enriched kmers to cluster and plot [DEFAULT 5]')
     optional.add_argument('-s',"--smoothing", type=int, default=6, nargs='?',
                         help='window used for smoothing kmer positional distribution curves [DEFAULT 6]')
     optional.add_argument('-re',"--repeats", type=str, choices=['remove_repeats', 'masked', 'unmasked', 'repeats_only'], default='unmasked', nargs='?',
-                        help='how to treat repeating regions within genome (options: "masked", "unmasked", \n \
-                            "repeats_only", "remove_repeats"). When applying any of the options with the exception of \n \
-                                repeats == "unmasked", a genome with soft-masked repeat sequences should be \n \
-                                    used for input, ie. repeats in lowercase letters.')
+                        help="""
+                        how to treat repeating regions within genome (options: "masked", "unmasked", "repeats_only", "remove_repeats").
+                        When applying any of the options with the exception of repeats == "unmasked", a genome with soft-masked
+                        repeat sequences should be used for input, ie. repeats in lowercase letters.
+                        """)
     optional.add_argument('-a',"--alloutputs", dest='alloutputs', default='False', type=lambda x:bool(strtobool(x)),
                         help='controls the number of outputs, can be True or False [DEFAULT False]')
     optional.add_argument('-sr',"--specificregion", choices=["genome", "whole_gene", "intron", "UTR3", "other_exon", "ncRNA", "intergenic"], default=None, nargs='+',
-                        required=False, help='choose to run PEKA on a specific region only, to specify multiple regions enter them space separated [DEFAULT None]')
+                        required=False, help="""
+                        choose to run PEKA on a specific region only, to specify multiple regions enter them space separated [DEFAULT None]
+                        """)
     optional.add_argument('-sub',"--subsample", dest='subsample', default='True', type=lambda x:bool(strtobool(x)),
-                        help='if the crosslinks file is very large, they can be subsampled to reduce runtime, can be True/False [DEFAULT True]')
+                        help="""
+                        if the crosslinks file is very large, they can be subsampled to reduce runtime, can be True/False [DEFAULT True]
+                        """)
     optional.add_argument('-seed',"--set_seeds", dest='set_seeds', default='True', type=lambda x:bool(strtobool(x)),
-                        help='If you want to ensure reproducibility of results the option set_seeds must be set to True. Can be True or False [DEFAULT True]. \n \
-                        Note that setting seeds reduces the randomness of background sampling.')
+                        help="""
+                        If you want to ensure reproducibility of results the option set_seeds must be set to True.
+                        Can be True or False [DEFAULT True].
+                        Note that setting seeds reduces the randomness of background sampling.
+                        """)
 
     parser._action_groups.append(optional)
     args = parser.parse_args()
@@ -1266,7 +1277,7 @@ def run(peak_file,
         cluster_rename = get_clusters_name(clusters_dict)
         cluster_columns_rename = {c_id: (cluster_rename[c_id], list(clusters_dict[c_id])) for c_id in cluster_rename}
         df_cluster_sum.rename(columns=cluster_columns_rename).to_csv(f"{output_path}/{sum_name}", sep="\t")
-        # finnaly plot all the clusters and the wider window (-150 to 100) plot
+        # finally plot all the clusters and the wider window (-150 to 100) plot
         # with average occurences
         plot_positional_distribution(
             df_smooth, df_cluster_sum, clusters_dict, clusters_rank, sample_name, cluster_rename, region, kmer_length, output_path
