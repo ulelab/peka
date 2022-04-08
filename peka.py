@@ -1130,7 +1130,7 @@ def run(peak_file,
             # For reproducibility it is necessary to set a seed, but each instance gets it's own seed.
             if set_seeds:
                 random.seed(i)
-            random_seqs = random.sample(reference_sequences, len(sites))
+            random_seqs = random.sample(reference_sequences, ntxn)
             # print("Random state in roxn sampling:", random.getstate())
             random_kmer_pos_count_t = pos_count_kmer(random_seqs, kmer_length, window, repeats=repeats)
             random_kmer_pos_count = {key.replace("T", "U"): value for key, value in random_kmer_pos_count_t.items()}
@@ -1148,18 +1148,17 @@ def run(peak_file,
             random_roxn.append(roxn_sample)
 
         temp_combined_roxn = {}
-        if kmer_length <= 4:
-            prtxn_conf = 66
-        elif kmer_length <= 6:
-            prtxn_conf = 80
-        else:
-            prtxn_conf = 99
         for key in list(random_roxn[0].keys()):
+            # For each kmer generate a temp_roxn list which combines its roxn dictionaries from all samples
             temp_roxn = []
             for sample in random_roxn:
+                # For each sample (n=100) append RoXn values (all positons) for a given k-mer to temp_roxn
+                # Appended value is a dictionary of {pos: Roxn, ...} for a given k-mer
                 temp_roxn.append(sample[key])
             for pos_dict in temp_roxn:
                 for pos, val in pos_dict.items():
+                    # For each position appends roxn value to temp_combined_roxn[pos]
+                    # Each position gets a 100 values for 1 k-mer, which makes it 100*(nkmers) values in total for each position
                     previous = temp_combined_roxn.get(pos, [])
                     try:
                         previous.append(val)
@@ -1203,6 +1202,7 @@ def run(peak_file,
         df_out['etxn'] = df_out.apply(
             lambda row: np.log2(row.artxn / row.aroxn) if (row.aroxn != 0 and row.artxn != 0) else np.nan, axis=1
             )
+        # Removes k-mers where artxn is nan
         artxn = {x: artxn[x] for x in artxn if not np.isnan(artxn[x])}
         etxn = {x: np.log2(artxn[x] / aroxn[x]) for x in artxn}
         df_etxn = pd.DataFrame.from_dict(etxn, orient="index", columns=["etxn"])
