@@ -1201,13 +1201,15 @@ def run(peak_file,
             P_kmer_at_pos = (1 - ((n_possible_kmers - 1) / (n_possible_kmers)) ** (ntxn))
             P_kmer_at_pos = round(P_kmer_at_pos * 100, 2)
             print('Probability (%) that k-mer was found at position in sampled roxn (rounded to 2 decimal points):', P_kmer_at_pos)
-            if int(P_kmer_at_pos) == 100:
-                # Maximal threshold is 99 %, 100% threshold would result in no positions assigned to k-mers
-                P_kmer_at_pos = 99
+            if int(P_kmer_at_pos) > 90:
+                # Maximal threshold is 90 %, 100% threshold would result in no positions assigned to k-mers
+                # P_kmer_at_pos = 99
+                P_kmer_at_pos = 90
             else:
                 P_kmer_at_pos = int(P_kmer_at_pos)
 
-            relaxThreshold = int(P_kmer_at_pos / 10) * 10
+            # Threshold is relaxed by another 10 %
+            relaxThreshold = (P_kmer_at_pos - 10) if (P_kmer_at_pos - 10) > 0 else 0
 
             print('strict prtxn threshold:', P_kmer_at_pos)
             print('relaxed prtxn threshold:', relaxThreshold)
