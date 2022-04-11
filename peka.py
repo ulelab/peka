@@ -1220,9 +1220,6 @@ def run(peak_file,
                 if relaxThreshold > np.min(list(percentageZero.values())):
                     # Using relaxed threshold
                     prtxn_conf = relaxThreshold
-                elif P_kmer_at_pos > round(np.min(list(percentageZero.values())), 2):
-                    # Using strict threshold
-                    prtxn_conf = P_kmer_at_pos
                 else:
                     # Use all positions within a window for peka score calculation
                     print('All positions will be used to calculate PEKA-score.')
