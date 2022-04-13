@@ -40,8 +40,21 @@ This command is also useful for installing development versions of PEKA.
 
 ## Usage
 ```
-python3 peka.py [-h] -i INPUTPEAKS -x INPUTXLSITES -g GENOMEFASTA -gi GENOMEINDEX -r REGIONS [-k [{4,5,6,7}]] [-o [OUTPUTPATH]] [-w [WINDOW]] [-dw [DISTALWINDOW]] [-t [TOPN]] [-p [PERCENTILE]] [-c [CLUSTERS]] [-s [SMOOTHING]]
-               [-re [{masked,unmasked,repeats_only,remove_repeats}]] [-a [ALLOUTPUTS]] [-sr [{genome,whole_gene,intron,UTR3,other_exon,ncRNA,intergenic}]] [-sub [SUBSAMPLE]]
+usage: peka.py [-h] -i INPUTPEAKS -x INPUTXLSITES -g GENOMEFASTA -gi GENOMEINDEX -r REGIONS \
+               [-k [{3,4,5,6,7}]] \
+               [-o [OUTPUTPATH]] \
+               [-w [WINDOW]] \
+               [-dw [DISTALWINDOW]] \
+               [-t [TOPN]] \
+               [-p [PERCENTILE]] \
+               [-c [CLUSTERS]] \
+               [-s [SMOOTHING]] \
+               [-re [{remove_repeats,masked,unmasked,repeats_only}]] \
+               [-pos [RELEVANT_POS_THRESHOLD] | -relax {True,False}] \
+               [-a {True,False}] \
+               [-sr {genome,whole_gene,intron,UTR3,other_exon,ncRNA,intergenic}] \
+               [-sub {True,False}] \
+               [-seed {True,False}]
 ```
 
 🔴 **IMPORTANT NOTE!** Make sure all the required inputs, i.e. bed files, genome in fasta format, genome index and regions file, follow the same naming convention for chromosome names. Either all files must use the UCSC (GENCODE) naming convention, which prefixes chromosome names with "chr" ("chr1", ..., "chrM") or all files should use Ensembl naming convention ("1", ..., "MT").
@@ -49,46 +62,93 @@ python3 peka.py [-h] -i INPUTPEAKS -x INPUTXLSITES -g GENOMEFASTA -gi GENOMEINDE
 ```
 required arguments:
   -i INPUTPEAKS, --inputpeaks INPUTPEAKS
-                        CLIP peaks (intervals of crosslinks) in BED file format
+                        CLIP peaks (intervals of crosslinks) in BED file
+                        format
   -x INPUTXLSITES, --inputxlsites INPUTXLSITES
                         CLIP crosslinks in BED file format
   -g GENOMEFASTA, --genomefasta GENOMEFASTA
-                        genome fasta file, ideally the same as was used for read alignment
+                        genome fasta file, ideally the same as was used for
+                        read alignment
   -gi GENOMEINDEX, --genomeindex GENOMEINDEX
                         genome fasta index file (.fai)
   -r REGIONS, --regions REGIONS
-                        genome segmentation file produced as output of "iCount segment" function
+                        genome segmentation file produced as output of "iCount
+                        segment" function
 
 optional arguments:
   -h, --help            show this help message and exit
-  -k [{4,5,6,7}], --kmerlength [{4,5,6,7}]
+  -k [{3,4,5,6,7}], --kmerlength [{3,4,5,6,7}]
                         kmer length [DEFAULT 5]
   -o [OUTPUTPATH], --outputpath [OUTPUTPATH]
-                        output folder [DEFAULT current directory]. Make sure the specified folder exists before execution of the script.
+                        output folder [DEFAULT current directory]
   -w [WINDOW], --window [WINDOW]
-                        window around thresholded crosslinks for finding enriched kmers [DEFAULT 20]
+                        window around thresholded crosslinks for finding
+                        enriched kmers [DEFAULT 20]
   -dw [DISTALWINDOW], --distalwindow [DISTALWINDOW]
-                        window around enriched kmers to calculate distribution [DEFAULT 150]
+                        window around enriched kmers to calculate distribution
+                        [DEFAULT 150]
   -t [TOPN], --topn [TOPN]
-                        number of kmers ranked by z-score in descending order for clustering and plotting [DEFAULT 20]
+                        number of kmers ranked by z-score in descending order
+                        for clustering and plotting [DEFAULT 20]
   -p [PERCENTILE], --percentile [PERCENTILE]
-                        percentile for considering thresholded crosslinks eg. percentile 0.7 means that a cDNA count threshold is determined at which >=70 percent of the crosslink sites within the region have a cDNA count equal or below the threshold. Thresholded crosslinks have cDNA count above the threshold [DEFAULT 0.7]'
+                        Percentile for considering thresholded crosslinks.
+                        Accepts a value between 0 and 1 [0, 1). Percentile 0.7
+                        means that a cDNA count threshold is determined at
+                        which >=70 percent of the crosslink sites within the
+                        region have a cDNA count equal or below the threshold.
+                        Thresholded crosslinks have cDNA count above the
+                        threshold. [DEFAULT 0.7]
   -c [CLUSTERS], --clusters [CLUSTERS]
-                        how many enriched kmers to cluster and plot [DEFAULT 5]
+                        how many enriched kmers to cluster and plot [DEFAULT
+                        5]
   -s [SMOOTHING], --smoothing [SMOOTHING]
-                        window used for smoothing kmer positional distribution curves [DEFAULT 6]
-  -re [{masked,unmasked,repeats_only,remove_repeats}], --repeats [{masked,unmasked,repeats_only,remove_repeats}]
-                        how to treat repeating regions within genome (options: "masked", "unmasked", "repeats_only", "remove_repeats"). When applying any of the options with the exception of repeats == "unmasked", a genome with soft-masked
-                        repeat sequences should be used for input, ie. repeats in lowercase letters. [DEFAULT "unmasked"]
-  -a [ALLOUTPUTS], --alloutputs [ALLOUTPUTS]
-                        controls the number of outputs, can be True/False [DEFAULT False]
-  -sr [{genome,whole_gene,intron,UTR3,other_exon,ncRNA,intergenic}], --specificregion [genome,whole_gene,intron,UTR3,other_exon,ncRNA,intergenic}]
-                        choose to run PEKA on a specific region only, to specify multiple regions enter them space separated [DEFAULT None]
-  -sub [SUBSAMPLE], --subsample [SUBSAMPLE]
-                        if the crosslinks file is large, they can be subsampled to reduce runtime, can be True/False, recommended is True [DEFAULT True]
-  -seed [SET_SEEDS], --set_seeds [SET_SEEDS]
-                      If you want to ensure reproducibility of results the flag --set_seeds must be set to True.
-                      Can be True or False [DEFAULT True]. Note that setting seeds reduces the randomness of background sampling.
+                        window used for smoothing kmer positional distribution
+                        curves [DEFAULT 6]
+  -re [{remove_repeats,masked,unmasked,repeats_only}], --repeats [{remove_repeats,masked,unmasked,repeats_only}]
+                        how to treat repeating regions within genome (options:
+                        "masked", "unmasked", "repeats_only",
+                        "remove_repeats"). When applying any of the options
+                        with the exception of repeats == "unmasked", a genome
+                        with soft-masked repeat sequences should be used for
+                        input, ie. repeats in lowercase letters. [DEFAULT
+                        "unmasked"]
+  -pos [RELEVANT_POS_THRESHOLD], --relevant_pos_threshold [RELEVANT_POS_THRESHOLD]
+                        Percentile to set as threshold for relevant positions.
+                        Accepted values are floats between 0 and 99 [0, 99].
+                        If threshold is set to 0 then all positions within the
+                        set window (-w, default 20 nt) will be considered for
+                        enrichment calculation. If threshold is not zero, it
+                        will be used to determine relevant positions for
+                        enrichment calculation for each k-mer. If the -pos
+                        option is not set, then the threshold will be
+                        automatically assigned based on k-mer lengthand number
+                        of crosslinks in region.
+  -relax {True,False}, --relaxed_prtxn {True,False}
+                        Whether to relax automatically calculated prtxn
+                        threshold or not. Can be 'True' or 'False', default is
+                        'True'. If 'True', more positions will be included for
+                        PEKA-score calculation across k-mers. Using relaxed
+                        threshold is recommended, unless you have data of very
+                        high complexity and are using k-mer length <=5. This
+                        argument can't be used together with -pos argument,
+                        which sets a user-defined threshold for relevant
+                        positions. [DEFAULT True]
+  -a {True,False}, --alloutputs {True,False}
+                        controls the number of outputs, can be True or False
+                        [DEFAULT False]
+  -sr {genome,whole_gene,intron,UTR3,other_exon,ncRNA,intergenic}, --specificregion {genome,whole_gene,intron,UTR3,other_exon,ncRNA,intergenic}
+                        choose to run PEKA on a specific region only, to
+                        specify multiple regions enter them space separated
+                        [DEFAULT None]
+  -sub {True,False}, --subsample {True,False}
+                        if the crosslinks file is very large, they can be
+                        subsampled to reduce runtime, can be True/False
+                        [DEFAULT True]
+  -seed {True,False}, --set_seeds {True,False}
+                        If you want to ensure reproducibility of results the
+                        option set_seeds must be set to True. Can be True or
+                        False [DEFAULT True]. Note that setting seeds reduces
+                        the randomness of background sampling.
 ```
 
 ## Common issues
@@ -124,6 +184,8 @@ The default outputs produced by PEKA for each specified genomic region are:
     - artxn : average k-mer relative occurrence at prtxn positions around thresholded crosslink sites
     - aroxn : average k-mer relative occurrence at prtxn positions around background crosslink sites
     - etxn : log2 relative k-mer enrichment, calculated as log2(artxn/aroxn)
+    - p-value : a p-value for each k-mer is obtained under assumption that a distribution of obtained PEKA-scores is normal. K-mers with no PEKA-score are **omitted** from distribution. A distribution of PEKA-scores is converted to distribution of z-scores and p-value is obtained as area under the resulting standard Gaussian probability density function. <br>
+      🔴 **CAUTION! The distribution of PEKA-score is not necessarily normal. If using p-value to gauge significance, make sure that enough k-mers indeed get the PEKA-score and that they are normally distributed. This can be achieved by lowering k-mer length or by decreasing the threshold for relevant positions, using the -pos argument.**
 
 If the option ALLOUTPUTS is set to True, the following files are also outputted for each specified genomic region:
 - a bed file of thresholded crosslink sites
