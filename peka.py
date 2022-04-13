@@ -1204,13 +1204,23 @@ def run(peak_file,
             print('Probability (%) that k-mer was found at position in sampled roxn (rounded to 2 decimal points):', P_kmer_at_pos)
             if int(P_kmer_at_pos) > 90:
                 # Maximal threshold is 90 %, 100% threshold would result in no positions assigned to k-mers
-                # P_kmer_at_pos = 99
                 P_kmer_at_pos = 90
             else:
                 P_kmer_at_pos = int(P_kmer_at_pos)
 
-            # Threshold is relaxed by another 10 %
-            relaxThreshold = (P_kmer_at_pos - 10) if (P_kmer_at_pos - 10) > 0 else 0
+            # Threshold is relaxed by another 10 % or 20 % depending on k-mer length.
+            # For shorter k-mers threshold must be relaxed more to ensure enough motifs
+            # will be evaluated dor enrichment. For 4 mers at a 90% threshold, we'd expect
+            # only about 25 kmers (~10%) to be able to reliably pass the positional thresholds, while
+            # the absolute number of k-mers is much greater for k-mers of longer lenths (~102 motifs for 5mers,
+            #  ~409 for 6mers, ~1638 for 7mers)
+            if kmer_length < 4:
+                relaxBy = 40
+            elif kmer_length == 4:
+                relaxBy = 20
+            else:
+                relaxBy = 10
+            relaxThreshold = (P_kmer_at_pos - relaxBy) if (P_kmer_at_pos - relaxBy) > 0 else 0
 
             print('strict prtxn threshold:', P_kmer_at_pos)
             print('relaxed prtxn threshold:', relaxThreshold)
@@ -1226,13 +1236,8 @@ def run(peak_file,
                     print('All positions will be used to calculate PEKA-score.')
                     prtxn_conf = 0
             else:
+                # Use strict threshold
                 prtxn_conf = P_kmer_at_pos
-            # if kmer_length <= 4:
-            #     prtxn_conf = 66
-            # elif kmer_length <= 6:
-            #     prtxn_conf = 80
-            # else:
-            #     prtxn_conf = 99
         print('prtxn confidence:', prtxn_conf)
 
         threshold = {pos: np.percentile(values, prtxn_conf, axis=0) for pos, values in temp_combined_roxn.items()}
