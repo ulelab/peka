@@ -127,10 +127,11 @@ def cli():
                         help='number of kmers ranked by z-score in descending order for clustering and plotting [DEFAULT 20]')
     optional.add_argument('-p',"--percentile", type=float, default=0.7, nargs='?',
                         help="""
-                        percentile for considering thresholded crosslinks eg. percentile 0.7 means
-                        that a cDNA count threshold is determined at which >=70 percent of the crosslink
+                        Percentile for considering thresholded crosslinks.
+                        Accepts a value between 0 and 1 [0, 1).
+                        Percentile 0.7 means that a cDNA count threshold is determined at which >=70 percent of the crosslink
                         sites within the region have a cDNA count equal or below the threshold.
-                        Thresholded crosslinks have cDNA count above the threshold [DEFAULT 0.7]
+                        Thresholded crosslinks have cDNA count above the threshold. [DEFAULT 0.7]
                         """)
     optional.add_argument('-c',"--clusters", type=int, default=5, nargs='?',
                         help='how many enriched kmers to cluster and plot [DEFAULT 5]')
@@ -140,35 +141,46 @@ def cli():
                         help="""
                         how to treat repeating regions within genome (options: "masked", "unmasked", "repeats_only", "remove_repeats").
                         When applying any of the options with the exception of repeats == "unmasked", a genome with soft-masked
-                        repeat sequences should be used for input, ie. repeats in lowercase letters.
+                        repeat sequences should be used for input, ie. repeats in lowercase letters. [DEFAULT "unmasked"]
                         """)
 
     exclusiveFlags = parser.add_mutually_exclusive_group()
     exclusiveFlags.add_argument('-pos', '--relevant_pos_threshold', dest='relevant_pos_threshold', nargs='?', type=float, required=False,
                         help="""
                         Percentile to set as threshold for relevant positions.
-                        Accepted values are between 0 and 99 [0, 99].
-                        If threshold is set to 0 then all positions within the set window will be considered for enrichment calculation.
-                        If threshold is not zero, it will be used to determine relevant positions for enrichment calculation for each k-mer.
-                        If the -pos option is not set, then the threshold will be automatically assigned based on k-mer lengthand number of crosslinks in region.
+                        Accepted values are floats between 0 and 99 [0, 99]. If
+                        threshold is set to 0 then all positions within the
+                        set window (-w, default 20 nt) will be considered for enrichment
+                        calculation. If threshold is not zero, it will be used
+                        to determine relevant positions for enrichment
+                        calculation for each k-mer. If the -pos option is not
+                        set, then the threshold will be automatically assigned
+                        based on k-mer lengthand number of crosslinks in
+                        region.
                         """)
-    exclusiveFlags.add_argument('-relax', '--relaxed_prtxn', dest='relaxed_prtxn', default='True', type=lambda x:bool(strtobool(x)), required=False,
+    exclusiveFlags.add_argument('-relax', '--relaxed_prtxn', dest='relaxed_prtxn', default='True', choices=[True, False], type=lambda x:bool(strtobool(x)), required=False,
                         help="""
-                        Whether to relax automatically calculated prtxn threshold or not. Relaxed means more positions will be included for PEKA-score calculation.
-                        Using relaxed threshold is recommended, unless you have data of very high complexity.
-                        Can't be used together with -pos flag, which sets a fixed threshold for relevant positions.
+                        Whether to relax automatically calculated prtxn
+                        threshold or not. Can be 'True' or 'False', default is 'True'.
+                        If 'True', more positions will be
+                        included for PEKA-score calculation across k-mers. Using relaxed
+                        threshold is recommended, unless you have data of very
+                        high complexity and are using k-mer length <=5.
+                        This argument can't be used together with -pos
+                        argument, which sets a user-defined threshold for relevant
+                        positions. [DEFAULT "True"]
                         """)
-    optional.add_argument('-a',"--alloutputs", dest='alloutputs', default='False', type=lambda x:bool(strtobool(x)),
+    optional.add_argument('-a',"--alloutputs", dest='alloutputs', default='False', type=lambda x:bool(strtobool(x)), choices=[True, False],
                         help='controls the number of outputs, can be True or False [DEFAULT False]')
     optional.add_argument('-sr',"--specificregion", choices=["genome", "whole_gene", "intron", "UTR3", "other_exon", "ncRNA", "intergenic"], default=None, nargs='+',
                         required=False, help="""
                         choose to run PEKA on a specific region only, to specify multiple regions enter them space separated [DEFAULT None]
                         """)
-    optional.add_argument('-sub',"--subsample", dest='subsample', default='True', type=lambda x:bool(strtobool(x)),
+    optional.add_argument('-sub',"--subsample", dest='subsample', default='True', type=lambda x:bool(strtobool(x)), choices=[True, False],
                         help="""
                         if the crosslinks file is very large, they can be subsampled to reduce runtime, can be True/False [DEFAULT True]
                         """)
-    optional.add_argument('-seed',"--set_seeds", dest='set_seeds', default='True', type=lambda x:bool(strtobool(x)),
+    optional.add_argument('-seed',"--set_seeds", dest='set_seeds', default='True', type=lambda x:bool(strtobool(x)), choices=[True, False],
                         help="""
                         If you want to ensure reproducibility of results the option set_seeds must be set to True.
                         Can be True or False [DEFAULT True].
@@ -1224,7 +1236,6 @@ def run(peak_file,
             print('strict prtxn threshold:', P_kmer_at_pos)
             print('relaxed prtxn threshold:', relaxThreshold)
             print('minimal percentage of 0-values across positions:', np.min(list(percentageZero.values())))
-            print('Zero percentage:', percentageZero)
 
             if relaxed:
                 if relaxThreshold > np.min(list(percentageZero.values())):
