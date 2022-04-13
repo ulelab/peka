@@ -31,17 +31,18 @@ We proceed then to calculate rtxn and roxn which are relative occurences of each
 kmer at each position around txn and oxn respectivly calculated as Otxn / Dtxn
 and Ooxn / Dtxn. Term oxn is used for reference crosslinks, defined as those not
 in peaks.
-All positions within -60 to 60 around txn where rtxn > 1.5 are called prtxn and
-are used in next step where we calculate average rtxn across prtxn positions
-relative to txn and average roxn across prtxn positions relative to oxn. These
-averages are called artxn and aroxn.
+All positions within a user-defined window around txn where rtxn of a particular k-mer
+exceeds the threshold value obtained from randomly-sampled background are called prtxn
+('relevant positions') and are used in next step where we calculate average rtxn
+across prtxn positions relative to txn and average roxn across prtxn positions relative
+to oxn. These averages are called artxn and aroxn.
 Enrichment around thresholded crosslinks etxn is calculated as log2(artxn/aroxn)
 and reported in the outfile table.
 For PEKA-score calculation proceedure is similar to the one described above with
-the exception that aroxn is calculated from 30 random samples of oxn in order
+the exception that aroxn is calculated from 100 random samples of oxn in order
 to obtain mean aroxn and its standard deviation for each kmer using formula:
-PEKA-score = (artxn - mean(aroxn)) / std(aroxn)
-So obtained PEKA-scores are used to rank kmers and top kmers are chosen for
+PEKA-score = (artxn - mean(aroxn)) / std(aroxn).
+Obtained PEKA-scores are used to rank kmers and top kmers are chosen for
 plotting. Number of top kmers to be plotted and number of clusters are user
 defined.
 The k-means clustering is used to define groups of kmers that have most
@@ -144,7 +145,7 @@ def cli():
                         """)
 
     exclusiveFlags = parser.add_mutually_exclusive_group()
-    exclusiveFlags.add_argument('-pos', '--relevant_pos_threshold', dest='relevant_pos_threshold', nargs='?', type=float,
+    exclusiveFlags.add_argument('-pos', '--relevant_pos_threshold', dest='relevant_pos_threshold', nargs='?', type=float, required=False,
                         help="""
                         Percentile to set as threshold for relevant positions.
                         Accepted values are between 0 and 99 [0, 99].
@@ -152,10 +153,10 @@ def cli():
                         If threshold is not zero, it will be used to determine relevant positions for enrichment calculation for each k-mer.
                         If the -pos option is not set, then the threshold will be automatically assigned based on k-mer lengthand number of crosslinks in region.
                         """)
-    exclusiveFlags.add_argument('-relax', '--relaxed_prtxn', dest='relaxed_prtxn', default='True', type=lambda x:bool(strtobool(x)),
+    exclusiveFlags.add_argument('-relax', '--relaxed_prtxn', dest='relaxed_prtxn', default='True', type=lambda x:bool(strtobool(x)), required=False,
                         help="""
                         Whether to relax automatically calculated prtxn threshold or not. Relaxed means more positions will be included for PEKA-score calculation.
-                        Using relaxed threshold is recommended with data of lower complexity.
+                        Using relaxed threshold is recommended, unless you have data of very high complexity.
                         Can't be used together with -pos flag, which sets a fixed threshold for relevant positions.
                         """)
     optional.add_argument('-a',"--alloutputs", dest='alloutputs', default='False', type=lambda x:bool(strtobool(x)),
@@ -974,9 +975,9 @@ def run(peak_file,
     - sites_file: crosslinks in BED file format
     - genome: FASTA file format, preferably the same as was used for alignment
     - genome_fai: FASTA index file
-    - regions_file: custom genome segmentation file
+    - regions_file: custom genome segmentation file as obtained from iCount segment
     - window: region around (thresholded) crosslinks where positional
-      distributions are obtained by counting kmers per position (default 40)
+      distributions are obtained by counting kmers per position (default 20)
     - window_distal: region considered for background distribution (default 150)
     - kmer_length: length (in nucleotides) of kmers to be analysed (default 4,
       with option between 3 and 7)
@@ -1030,8 +1031,6 @@ def run(peak_file,
                             })
 
     df_params.to_csv(f'{output_path}/{sample_name}_run_parameters.tsv', sep='\t', header=False)
-
-
 
     print("Getting thresholded crosslinks")
     df_txn = get_threshold_sites(sites_file, percentile=percentile)
@@ -1190,8 +1189,10 @@ def run(peak_file,
 
         # Determine prtxn threshold based on random roxn
         if prtxn_conf is not None:
+            # Prtxn confidence threshold is passed by the user.
             pass
         else:
+            # Automatically determine prtxn confidence threshold based on k-mer length and ntxn.
             percentageZero = {}
             for pos, values in temp_combined_roxn.items():
                 percentageZero[pos] = values.count(0) * 100 / len(values)
