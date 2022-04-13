@@ -1241,13 +1241,6 @@ def run(peak_file,
         print('prtxn confidence:', prtxn_conf)
 
         threshold = {pos: np.percentile(values, prtxn_conf, axis=0) for pos, values in temp_combined_roxn.items()}
-        import json
-        print('saving files')
-        with open(f"{output_path}/thresholds.txt", "w") as fp:
-            json.dump(threshold, fp)
-
-        with open(f"{output_path}/pos_roxn.txt", "w") as fp:
-            json.dump(temp_combined_roxn, fp)
 
         prtxn = {x: [] for x in rtxn}
         for kmer, posm in rtxn.items():
