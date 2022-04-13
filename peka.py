@@ -1319,7 +1319,8 @@ def run(peak_file,
         df_out = pd.merge(df_out, df_z_score, left_index=True, right_index=True, how="outer")
         # using z-score we can also calculate p-values for each motif which are
         # then added to outfile table
-        df_out["p-value"] = scipy.special.ndtr(-df_out["PEKA-score"])
+        zscoresFromPEKAscore = scipy.stats.zscore(df_out['PEKA-score'], axis=0, ddof=0, nan_policy='omit')
+        df_out["p-value"] = scipy.special.ndtr(-zscoresFromPEKAscore)
         # kmer positional occurences around thresholded crosslinks on positions
         # around -50 to 50 are also added to outfile table which is then finally
         # written to file
