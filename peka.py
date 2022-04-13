@@ -18,7 +18,6 @@ different:
 - ncRNA (all other genes),
 - intergenic,
 - whole gene
-For whole gene and other exons
 Proceed only with those regions where tXn>100. For all analyses, exclude
 chrM and those scaffolds not included in the genome annotations.
 For each kmer, first count occurences at each specific position relative to
@@ -31,17 +30,18 @@ We proceed then to calculate rtxn and roxn which are relative occurences of each
 kmer at each position around txn and oxn respectivly calculated as Otxn / Dtxn
 and Ooxn / Dtxn. Term oxn is used for reference crosslinks, defined as those not
 in peaks.
-All positions within -60 to 60 around txn where rtxn > 1.5 are called prtxn and
-are used in next step where we calculate average rtxn across prtxn positions
-relative to txn and average roxn across prtxn positions relative to oxn. These
-averages are called artxn and aroxn.
+All positions within a user-defined window around txn where rtxn of a particular k-mer
+exceeds the threshold value obtained from randomly-sampled background are called prtxn
+('relevant positions') and are used in next step where we calculate average rtxn
+across prtxn positions relative to txn and average roxn across prtxn positions relative
+to oxn. These averages are called artxn and aroxn.
 Enrichment around thresholded crosslinks etxn is calculated as log2(artxn/aroxn)
 and reported in the outfile table.
 For PEKA-score calculation proceedure is similar to the one described above with
-the exception that aroxn is calculated from 30 random samples of oxn in order
+the exception that aroxn is calculated from 100 random samples of oxn in order
 to obtain mean aroxn and its standard deviation for each kmer using formula:
-PEKA-score = (artxn - mean(aroxn)) / std(aroxn)
-So obtained PEKA-scores are used to rank kmers and top kmers are chosen for
+PEKA-score = (artxn - mean(aroxn)) / std(aroxn).
+Obtained PEKA-scores are used to rank kmers and top kmers are chosen for
 plotting. Number of top kmers to be plotted and number of clusters are user
 defined.
 The k-means clustering is used to define groups of kmers that have most
@@ -115,7 +115,7 @@ def cli():
     required.add_argument('-r',"--regions", type=str, required=True,
                         help='genome segmentation file produced as output of "iCount segment" function')
 
-    optional.add_argument('-k',"--kmerlength", type=int, choices=[4,5,6,7], default=5, nargs='?',
+    optional.add_argument('-k',"--kmerlength", type=int, choices=[3,4,5,6,7], default=5, nargs='?',
                         help='kmer length [DEFAULT 5]')
     optional.add_argument('-o',"--outputpath", type=str, default=os.getcwd(), nargs='?',
                         help='output folder [DEFAULT current directory]')
@@ -126,27 +126,54 @@ def cli():
     optional.add_argument('-t',"--topn", type=int, default=20, nargs='?',
                         help='number of kmers ranked by z-score in descending order for clustering and plotting [DEFAULT 20]')
     optional.add_argument('-p',"--percentile", type=float, default=0.7, nargs='?',
-                        help='percentile for considering thresholded crosslinks eg. percentile 0.7 means \n \
-                            that a cDNA count threshold is determined at which >=70 percent of the crosslink sites within the region \n \
-                            have a cDNA count equal or below the threshold. Thresholded crosslinks have cDNA count above the threshold [DEFAULT 0.7]')
+                        help="""
+                        percentile for considering thresholded crosslinks eg. percentile 0.7 means
+                        that a cDNA count threshold is determined at which >=70 percent of the crosslink
+                        sites within the region have a cDNA count equal or below the threshold.
+                        Thresholded crosslinks have cDNA count above the threshold [DEFAULT 0.7]
+                        """)
     optional.add_argument('-c',"--clusters", type=int, default=5, nargs='?',
                         help='how many enriched kmers to cluster and plot [DEFAULT 5]')
     optional.add_argument('-s',"--smoothing", type=int, default=6, nargs='?',
                         help='window used for smoothing kmer positional distribution curves [DEFAULT 6]')
     optional.add_argument('-re',"--repeats", type=str, choices=['remove_repeats', 'masked', 'unmasked', 'repeats_only'], default='unmasked', nargs='?',
-                        help='how to treat repeating regions within genome (options: "masked", "unmasked", \n \
-                            "repeats_only", "remove_repeats"). When applying any of the options with the exception of \n \
-                                repeats == "unmasked", a genome with soft-masked repeat sequences should be \n \
-                                    used for input, ie. repeats in lowercase letters.')
+                        help="""
+                        how to treat repeating regions within genome (options: "masked", "unmasked", "repeats_only", "remove_repeats").
+                        When applying any of the options with the exception of repeats == "unmasked", a genome with soft-masked
+                        repeat sequences should be used for input, ie. repeats in lowercase letters.
+                        """)
+
+    exclusiveFlags = parser.add_mutually_exclusive_group()
+    exclusiveFlags.add_argument('-pos', '--relevant_pos_threshold', dest='relevant_pos_threshold', nargs='?', type=float, required=False,
+                        help="""
+                        Percentile to set as threshold for relevant positions.
+                        Accepted values are between 0 and 99 [0, 99].
+                        If threshold is set to 0 then all positions within the set window will be considered for enrichment calculation.
+                        If threshold is not zero, it will be used to determine relevant positions for enrichment calculation for each k-mer.
+                        If the -pos option is not set, then the threshold will be automatically assigned based on k-mer lengthand number of crosslinks in region.
+                        """)
+    exclusiveFlags.add_argument('-relax', '--relaxed_prtxn', dest='relaxed_prtxn', default='True', type=lambda x:bool(strtobool(x)), required=False,
+                        help="""
+                        Whether to relax automatically calculated prtxn threshold or not. Relaxed means more positions will be included for PEKA-score calculation.
+                        Using relaxed threshold is recommended, unless you have data of very high complexity.
+                        Can't be used together with -pos flag, which sets a fixed threshold for relevant positions.
+                        """)
     optional.add_argument('-a',"--alloutputs", dest='alloutputs', default='False', type=lambda x:bool(strtobool(x)),
                         help='controls the number of outputs, can be True or False [DEFAULT False]')
     optional.add_argument('-sr',"--specificregion", choices=["genome", "whole_gene", "intron", "UTR3", "other_exon", "ncRNA", "intergenic"], default=None, nargs='+',
-                        required=False, help='choose to run PEKA on a specific region only, to specify multiple regions enter them space separated [DEFAULT None]')
+                        required=False, help="""
+                        choose to run PEKA on a specific region only, to specify multiple regions enter them space separated [DEFAULT None]
+                        """)
     optional.add_argument('-sub',"--subsample", dest='subsample', default='True', type=lambda x:bool(strtobool(x)),
-                        help='if the crosslinks file is very large, they can be subsampled to reduce runtime, can be True/False [DEFAULT True]')
+                        help="""
+                        if the crosslinks file is very large, they can be subsampled to reduce runtime, can be True/False [DEFAULT True]
+                        """)
     optional.add_argument('-seed',"--set_seeds", dest='set_seeds', default='True', type=lambda x:bool(strtobool(x)),
-                        help='If you want to ensure reproducibility of results the option set_seeds must be set to True. Can be True or False [DEFAULT True]. \n \
-                        Note that setting seeds reduces the randomness of background sampling.')
+                        help="""
+                        If you want to ensure reproducibility of results the option set_seeds must be set to True.
+                        Can be True or False [DEFAULT True].
+                        Note that setting seeds reduces the randomness of background sampling.
+                        """)
 
     parser._action_groups.append(optional)
     args = parser.parse_args()
@@ -166,6 +193,8 @@ def cli():
         args.clusters,
         args.smoothing,
         args.repeats,
+        args.relevant_pos_threshold,
+        args.relaxed_prtxn,
         args.alloutputs,
         args.specificregion,
         args.subsample,
@@ -547,19 +576,6 @@ def pos_count_kmer(seqs, k_length, window, repeats, kmer_list=False):
     return kmer_pos_count
 
 
-def normalise_kmer_frequency(observed, reference):
-    """Normalize kmer counts - divide observed with reference counts."""
-    normalised = {}
-    for kmer, count in observed.items():
-        # In short regions of the reference there could be 0 of certain kmers.
-        # In such case, just normalize with 1.
-        try:
-            normalised[kmer] = count / reference[kmer] * 10 ** 6
-        except ZeroDivisionError:
-            normalised[kmer] = count * 10 ** 6
-    return normalised
-
-
 def get_max_pos(pos_count, window_peak_l=15, window_peak_r=15):
     """Return position with max values for every kmer in the dictionary."""
     max_pos = {}
@@ -614,11 +630,6 @@ def get_average_poscount(pos_c):
         except ZeroDivisionError:
             avg[key] = value
     return avg
-
-
-def get_top_n_kmers(kmer_count, num):
-    """Get a list of top_n most frequent kmers."""
-    return [item[0] for item in sorted(kmer_count.items(), key=lambda x: x[1], reverse=True)[:num]]
 
 
 @ignore_warnings(category=ConvergenceWarning)
@@ -844,6 +855,7 @@ def get_clusters_name(c_dict):
     """
     c_con_dict = {}
     for cluster_id, kmers_list in c_dict.items():
+        kmers_list = [k.upper() for k in kmers_list]
         if len(kmers_list) == 1:
             # if there is only one kmer in a cluster than cluster name is kmer
             c_con_dict[cluster_id] = kmers_list[0]
@@ -934,11 +946,11 @@ def plot_positional_distribution(df_in, df_sum, c_dict, c_rank, name, cluster_re
     sns.lineplot(data=df_ordered, ax=axs[axs_x_sumplt, axs_y_sumplt], ci=None, **lineplot_kwrgs)
     fig.savefig(f"{output_path}/{name}_{kmer_length}mer_{region}.pdf", format="pdf")
 
-def run(peak_file, 
-    sites_file, 
-    genome, 
-    genome_fai, 
-    regions_file, 
+def run(peak_file,
+    sites_file,
+    genome,
+    genome_fai,
+    regions_file,
     kmer_length,
     output_path,
     window,
@@ -948,6 +960,8 @@ def run(peak_file,
     clusters,
     smoothing,
     repeats,
+    prtxn_conf,
+    relaxed,
     all_outputs,
     regions,
     subsample,
@@ -960,9 +974,9 @@ def run(peak_file,
     - sites_file: crosslinks in BED file format
     - genome: FASTA file format, preferably the same as was used for alignment
     - genome_fai: FASTA index file
-    - regions_file: custom genome segmentation file
+    - regions_file: custom genome segmentation file as obtained from iCount segment
     - window: region around (thresholded) crosslinks where positional
-      distributions are obtained by counting kmers per position (default 40)
+      distributions are obtained by counting kmers per position (default 20)
     - window_distal: region considered for background distribution (default 150)
     - kmer_length: length (in nucleotides) of kmers to be analysed (default 4,
       with option between 3 and 7)
@@ -976,8 +990,8 @@ def run(peak_file,
     - all_outputs: controls the amount of outputs produced in the analysis
     - subsample: whether or not to subsample crosslinks
     - repeats: how to treat repeating regions within genome
-    (options: 'masked', 'unmasked', 'repeats_only'). When applying 
-    any of the options with the exception of repeats == 'unmasked', a genome with masked 
+    (options: 'masked', 'unmasked', 'repeats_only'). When applying
+    any of the options with the exception of repeats == 'unmasked', a genome with masked
     repeat sequences should be used for input.
     """
     start = time.time()
@@ -995,27 +1009,27 @@ def run(peak_file,
         "cds_utr_ncrna": "{}/cds_utr_ncrna_regions.bed".format(TEMP_PATH),
     }
     # Save run parameters into file
-    df_params = pd.Series(data={"peak_file": peak_file, 
-                            "sites_file": sites_file, 
-                            "regions": regions, 
-                            "kmer_length": kmer_length, 
-                            "genome": genome, 
-                            "genome_index_file": genome_fai, 
+    df_params = pd.Series(data={"peak_file": peak_file,
+                            "sites_file": sites_file,
+                            "regions": regions,
+                            "kmer_length": kmer_length,
+                            "genome": genome,
+                            "genome_index_file": genome_fai,
                             "gtf_segmentation_file": regions_file,
-                            "smoothing": smoothing, 
-                            "percentile": percentile, 
-                            "window": window, 
-                            "window_distal": window_distal, 
-                            "n_top_motifs": top_n, 
-                            "n_clusters": clusters, 
-                            "repeats" : repeats, 
-                            "subsample": subsample, 
-                            "all_outputs": all_outputs, 
+                            "smoothing": smoothing,
+                            "percentile": percentile,
+                            "window": window,
+                            "window_distal": window_distal,
+                            "n_top_motifs": top_n,
+                            "n_clusters": clusters,
+                            "repeats" : repeats,
+                            "relevant_pos_threshold": prtxn_conf,
+                            "relaxed": relaxed,
+                            "subsample": subsample,
+                            "all_outputs": all_outputs,
                             })
 
     df_params.to_csv(f'{output_path}/{sample_name}_run_parameters.tsv', sep='\t', header=False)
-
-
 
     print("Getting thresholded crosslinks")
     df_txn = get_threshold_sites(sites_file, percentile=percentile)
@@ -1055,7 +1069,7 @@ def run(peak_file,
             sites.saveas(f'{output_path}/{sample_name}_thresholded_sites_{region}.bed.gz')
         # only continue analysis for region with over 100 thresholded sites
         if len(sites) < 100:
-            print(f"less then 100 thresholded crosslink in {region}")
+            print(f"less then 100 thresholded crosslink in {region}. Skipping {region}.")
             continue
         all_sites = pbt.BedTool.from_dataframe(df_xn_region[["chrom", "start", "end", "name", "score", "strand"]])
         # finds all crosslink sites that are not in peaks as reference for
@@ -1080,13 +1094,14 @@ def run(peak_file,
         )
         if repeats == "unmasked":
             sequences = [s.upper() for s in sequences]
+            reference_sequences = [s.upper() for s in reference_sequences]
         get_sequences_cp = time.time()
         # get positional counts for all kmers around thresholded crosslinks
         kmer_pos_count_t = pos_count_kmer(sequences, kmer_length, window_distal, repeats=repeats)
         print(f"Kmer positional counting runtime: {((time.time() - get_sequences_cp) / 60):.2f} min")
         kmer_pos_count = {key.replace("T", "U"): value for key, value in kmer_pos_count_t.items()}
         if repeats == "masked" or repeats == "repeats_only":
-            kmer_pos_count = {key.replace("t", "u"): value for key, value in kmer_pos_count_t.items()}
+            kmer_pos_count = {key.replace("t", "u").replace("T", "U"): value for key, value in kmer_pos_count_t.items()}
         # get position where the kmer count is maximal
         max_p = get_max_pos(kmer_pos_count, window_peak_l=15, window_peak_r=15)
         # prepare dataframe for outfile
@@ -1098,6 +1113,8 @@ def run(peak_file,
         avg_distal_occ = {}
         for key, value in distal.items():
             avg_distal_occ[key] = sum(value.values()) / len(value)
+        # Calculate minimal average distal occurrence for handling ZeroDivisionError
+        min_distal = min([ v for v in avg_distal_occ.values() if v != 0])
         # occurences of kmers on each position around thresholded crosslinks
         # relative to distal occurences
         rtxn = {x: {} for x in kmer_pos_count}
@@ -1106,14 +1123,14 @@ def run(peak_file,
                 try:
                     rtxn[motif][pos] = count / avg_distal_occ[motif]
                 except ZeroDivisionError:
-                    rtxn[motif][pos] = count / 0.005
+                    rtxn[motif][pos] = count / min_distal
         rtxn_cp = time.time()
         # get positional counts for all kmers around all crosslink not in peaks
         ref_pc_t = pos_count_kmer(reference_sequences, kmer_length, window, repeats=repeats)
         print(f"Reference positional counts runtime: {((time.time() - rtxn_cp) / 60):.2f} min")
         ref_pc = {key.replace("T", "U"): value for key, value in ref_pc_t.items()}
         if repeats == "masked" or repeats == "repeats_only":
-            ref_pc = {key.replace("t", "u"): value for key, value in ref_pc_t.items()}
+            ref_pc = {key.replace("t", "u").replace("T", "U"): value for key, value in ref_pc_t.items()}
         # occurences of kmers on each position around all crosslinks not in
         # peaks (reference) relative to distal occurences
         roxn = {x: {} for x in ref_pc}
@@ -1122,7 +1139,7 @@ def run(peak_file,
                 try:
                     roxn[motif][pos] = (count * ntxn) / (avg_distal_occ[motif] * noxn)
                 except ZeroDivisionError:
-                    roxn[motif][pos] = (count * ntxn) / (noxn * 0.005)
+                    roxn[motif][pos] = (count * ntxn) / (noxn * min_distal)
 
         # for z-score calculation random samples from crosslink out of peaks
         # (reference) are used and for each sample we calculate average relative
@@ -1133,13 +1150,13 @@ def run(peak_file,
             # For reproducibility it is necessary to set a seed, but each instance gets it's own seed.
             if set_seeds:
                 random.seed(i)
-            random_seqs = random.sample(reference_sequences, len(sites))
+            random_seqs = random.sample(reference_sequences, ntxn)
             # print("Random state in roxn sampling:", random.getstate())
             random_kmer_pos_count_t = pos_count_kmer(random_seqs, kmer_length, window, repeats=repeats)
             random_kmer_pos_count = {key.replace("T", "U"): value for key, value in random_kmer_pos_count_t.items()}
             if repeats == "masked" or repeats == "repeats_only":
                 random_kmer_pos_count = {
-                    key.replace("t", "u"): value for key, value in random_kmer_pos_count_t.items()
+                    key.replace("t", "u").replace("T", "U"): value for key, value in random_kmer_pos_count_t.items()
                 }
             roxn_sample = {x: {} for x in random_kmer_pos_count}
             for motif, pos_m in random_kmer_pos_count.items():
@@ -1147,29 +1164,83 @@ def run(peak_file,
                     try:
                         roxn_sample[motif][pos] = count / avg_distal_occ[motif]
                     except ZeroDivisionError:
-                        roxn_sample[motif][pos] = count / 0.005
+                        roxn_sample[motif][pos] = count / min_distal
             random_roxn.append(roxn_sample)
 
         temp_combined_roxn = {}
-        if kmer_length <= 4:
-            prtxn_conf = 66
-        elif kmer_length <= 6:
-            prtxn_conf = 80
-        else:
-            prtxn_conf = 99
         for key in list(random_roxn[0].keys()):
+            # For each kmer generate a temp_roxn list which combines its roxn dictionaries from all samples
             temp_roxn = []
             for sample in random_roxn:
+                # For each sample (n=100) append RoXn values (all positons) for a given k-mer to temp_roxn
+                # Appended value is a dictionary of {pos: Roxn, ...} for a given k-mer
                 temp_roxn.append(sample[key])
             for pos_dict in temp_roxn:
                 for pos, val in pos_dict.items():
+                    # For each position appends roxn value to temp_combined_roxn[pos]
+                    # Each position gets a 100 values for 1 k-mer, which makes it 100*(nkmers) values in total for each position
                     previous = temp_combined_roxn.get(pos, [])
                     try:
                         previous.append(val)
                         temp_combined_roxn[pos] = previous
                     except KeyError:
                         continue
+
+        # Determine prtxn threshold based on random roxn
+        if prtxn_conf is not None:
+            # Prtxn confidence threshold is passed by the user.
+            pass
+        else:
+            # Automatically determine prtxn confidence threshold based on k-mer length and ntxn.
+            percentageZero = {}
+            for pos, values in temp_combined_roxn.items():
+                percentageZero[pos] = values.count(0) * 100 / len(values)
+            # probability that a k-mer was found at least once at a particular position in the random roxn sample
+            n_possible_kmers = len(kmer_pos_count.keys())
+            print('Number of possible k-mers:', n_possible_kmers)
+            P_kmer_at_pos = (1 - ((n_possible_kmers - 1) / (n_possible_kmers)) ** (ntxn))
+            P_kmer_at_pos = round(P_kmer_at_pos * 100, 2)
+            print('Probability (%) that k-mer was found at position in sampled roxn (rounded to 2 decimal points):', P_kmer_at_pos)
+            if int(P_kmer_at_pos) > 90:
+                # Maximal threshold is 90 %, 100% threshold would result in no positions assigned to k-mers
+                P_kmer_at_pos = 90
+            else:
+                P_kmer_at_pos = int(P_kmer_at_pos)
+
+            # Threshold is relaxed by another 10 % or 20 % depending on k-mer length.
+            # For shorter k-mers threshold must be relaxed more to ensure enough motifs
+            # will be evaluated dor enrichment. For 4 mers at a 90% threshold, we'd expect
+            # only about 25 kmers (~10%) to be able to reliably pass the positional thresholds, while
+            # the absolute number of k-mers is much greater for k-mers of longer lenths (~102 motifs for 5mers,
+            #  ~409 for 6mers, ~1638 for 7mers)
+            if kmer_length < 4:
+                relaxBy = 40
+            elif kmer_length == 4:
+                relaxBy = 20
+            else:
+                relaxBy = 10
+            relaxThreshold = (P_kmer_at_pos - relaxBy) if (P_kmer_at_pos - relaxBy) > 0 else 0
+
+            print('strict prtxn threshold:', P_kmer_at_pos)
+            print('relaxed prtxn threshold:', relaxThreshold)
+            print('minimal percentage of 0-values across positions:', np.min(list(percentageZero.values())))
+            print('Zero percentage:', percentageZero)
+
+            if relaxed:
+                if relaxThreshold > np.min(list(percentageZero.values())):
+                    # Using relaxed threshold
+                    prtxn_conf = relaxThreshold
+                else:
+                    # Use all positions within a window for peka score calculation
+                    print('All positions will be used to calculate PEKA-score.')
+                    prtxn_conf = 0
+            else:
+                # Use strict threshold
+                prtxn_conf = P_kmer_at_pos
+        print('prtxn confidence:', prtxn_conf)
+
         threshold = {pos: np.percentile(values, prtxn_conf, axis=0) for pos, values in temp_combined_roxn.items()}
+
         prtxn = {x: [] for x in rtxn}
         for kmer, posm in rtxn.items():
             for pos, val in posm.items():
@@ -1178,10 +1249,7 @@ def run(peak_file,
                         prtxn[kmer].append(pos)
                 except KeyError:
                     pass
-        # Assigns the max_p to kmers with empty prtxn list
-        for i, val in prtxn.items():
-            if len(val) == 0:
-                val.append(max_p[i])
+        # Leave an empty list for prtxn if none of the positions passed the relevant positions threshold
         random_aroxn = []
         for roxn_sample in random_roxn:
             aroxn_sample = {
@@ -1192,24 +1260,25 @@ def run(peak_file,
         for key, value in prtxn.items():
             prtxn_concat[key] = ", ".join([str(i) for i in value])
         df_prtxn = pd.DataFrame.from_dict(prtxn_concat, orient="index", columns=["prtxn"])
-        df_out = pd.merge(df_out, df_prtxn, left_index=True, right_index=True)
+        df_out = pd.merge(df_out, df_prtxn, left_index=True, right_index=True, how='outer')
         # calculate average relative occurences for each kmer around thresholded
         # crosslinks across relevant positions and add it to outfile table
         artxn = {x: np.mean([rtxn[x][y] for y in prtxn[x]]) for x in rtxn}
         df_artxn = pd.DataFrame.from_dict(artxn, orient="index", columns=["artxn"])
-        df_out = pd.merge(df_out, df_artxn, left_index=True, right_index=True)
+        df_out = pd.merge(df_out, df_artxn, left_index=True, right_index=True, how='outer')
         # calculate average relative occurences for each kmer around reference
         # crosslinks across relevant positions and add it to outfile table
         aroxn = {x: np.mean([roxn[x][y] for y in prtxn[x] if y in roxn[x].keys()]) for x in roxn}
         df_aroxn = pd.DataFrame.from_dict(aroxn, orient="index", columns=["aroxn"])
-        df_out = pd.merge(df_out, df_aroxn, left_index=True, right_index=True)
+        df_out = pd.merge(df_out, df_aroxn, left_index=True, right_index=True, how='outer')
         # calculate log2 of ratio between average relative occurences between
         # thresholded and reference crosslinks, this ratio, colaculated for each
         # kmer is called enrichement and is added to outfile table
+        df_out['etxn'] = df_out.apply(
+            lambda row: np.log2(row.artxn / row.aroxn) if (row.aroxn != 0 and row.artxn != 0) else np.nan, axis=1
+            )
+        # Removes k-mers where artxn is nan
         artxn = {x: artxn[x] for x in artxn if not np.isnan(artxn[x])}
-        etxn = {x: np.log2(artxn[x] / aroxn[x]) for x in artxn}
-        df_etxn = pd.DataFrame.from_dict(etxn, orient="index", columns=["etxn"])
-        df_out = pd.merge(df_out, df_etxn, left_index=True, right_index=True, how="outer")
         # average relative occurence obtained with random sampling are combined
         # in a structure that can be then used for calculating averages,
         # standard deviations and finaly the z-score
@@ -1226,21 +1295,28 @@ def run(peak_file,
             random_std[key] = np.std(value)
         z_score = {}
         for key, value in random_avg.items():
-            try:
-                z_score[key] = (artxn[key] - value) / random_std[key]
-            except KeyError:
-                pass
+            with np.errstate(divide='raise'):
+                # Raises error, not just a print a warning, so we can catch exception
+                try:
+                    z_score[key] = (artxn[key] - value) / random_std[key]
+                except KeyError:
+                    # If there is no artxn entry for a given k-mer (due to absence of prtxn), then no PEKA-score is assigned.
+                    z_score[key] = np.nan
+                except FloatingPointError:
+                    # In case of division by zero, no PEKA-score is assigned.
+                    z_score[key] = np.nan
         df_z_score = pd.DataFrame.from_dict(z_score, orient="index", columns=["PEKA-score"])
         df_out = pd.merge(df_out, df_z_score, left_index=True, right_index=True, how="outer")
         # using z-score we can also calculate p-values for each motif which are
         # then added to outfile table
-        # df_out["p-value"] = scipy.special.ndtr(-df_out["PEKA-score"])
+        scoreDistribution = df_out.loc[df_out["PEKA-score"].notna(), 'PEKA-score']
+        zscoresFromPEKAscore = scipy.stats.zscore(scoreDistribution, axis=0, ddof=0)
+        df_out.loc[scoreDistribution.index.tolist(), "p-value"] = scipy.special.ndtr(-zscoresFromPEKAscore)
         # kmer positional occurences around thresholded crosslinks on positions
-        # around -50 to 50 are also added to outfile table which is then finnaly
+        # around -50 to 50 are also added to outfile table which is then finally
         # written to file
         # get order of z-scores to select top kmers to plot
-        kmers_order_of_enrichment = get_top_n_kmers(z_score, 4 ** kmer_length)
-        top_kmers = kmers_order_of_enrichment[:top_n]
+        top_kmers = df_out.sort_values(by='PEKA-score', ascending=False).index.tolist()[:top_n]
         # normalize kmer occurences by number of thresholded crosslinks for
         # easier comparison across different samples
         kmer_occ_per_txl = {x: {} for x in kmer_pos_count}
@@ -1287,7 +1363,7 @@ def run(peak_file,
         cluster_rename = get_clusters_name(clusters_dict)
         cluster_columns_rename = {c_id: (cluster_rename[c_id], list(clusters_dict[c_id])) for c_id in cluster_rename}
         df_cluster_sum.rename(columns=cluster_columns_rename).to_csv(f"{output_path}/{sum_name}", sep="\t")
-        # finnaly plot all the clusters and the wider window (-150 to 100) plot
+        # finally plot all the clusters and the wider window (-150 to 100) plot
         # with average occurences
         plot_positional_distribution(
             df_smooth, df_cluster_sum, clusters_dict, clusters_rank, sample_name, cluster_rename, region, kmer_length, output_path
@@ -1315,6 +1391,8 @@ def main():
         clusters,
         smoothing,
         repeats,
+        prtxn_conf,
+        relaxed,
         all_outputs,
         regions,
         subsample,
@@ -1336,6 +1414,8 @@ def main():
         clusters,
         smoothing,
         repeats,
+        prtxn_conf,
+        relaxed,
         all_outputs,
         regions,
         subsample,
