@@ -18,7 +18,6 @@ different:
 - ncRNA (all other genes),
 - intergenic,
 - whole gene
-For whole gene and other exons
 Proceed only with those regions where tXn>100. For all analyses, exclude
 chrM and those scaffolds not included in the genome annotations.
 For each kmer, first count occurences at each specific position relative to
@@ -116,7 +115,7 @@ def cli():
     required.add_argument('-r',"--regions", type=str, required=True,
                         help='genome segmentation file produced as output of "iCount segment" function')
 
-    optional.add_argument('-k',"--kmerlength", type=int, choices=[4,5,6,7], default=5, nargs='?',
+    optional.add_argument('-k',"--kmerlength", type=int, choices=[3,4,5,6,7], default=5, nargs='?',
                         help='kmer length [DEFAULT 5]')
     optional.add_argument('-o',"--outputpath", type=str, default=os.getcwd(), nargs='?',
                         help='output folder [DEFAULT current directory]')
