@@ -1309,11 +1309,9 @@ def run(peak_file,
                     z_score[key] = (artxn[key] - value) / random_std[key]
                 except KeyError:
                     # If there is no artxn entry for a given k-mer (due to absence of prtxn), then no PEKA-score is assigned.
-                    print('Not found in foreground:', key)
                     z_score[key] = np.nan
                 except FloatingPointError:
                     # In case of division by zero, no PEKA-score is assigned.
-                    print('Not found in background:', key)
                     z_score[key] = np.nan
         df_z_score = pd.DataFrame.from_dict(z_score, orient="index", columns=["PEKA-score"])
         df_out = pd.merge(df_out, df_z_score, left_index=True, right_index=True, how="outer")
