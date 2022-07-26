@@ -1084,7 +1084,18 @@ def run(peak_file,
         sites = pbt.BedTool.from_dataframe(df_sites[["chrom", "start", "end", "name", "score", "strand"]])
         # Intersect tXn with peak_file to only retain tXn within peaks
         narrow_sites1 = intersect(peak_file, sites)
-        df_sites = narrow_sites1.to_dataframe(names=["chrom", "start", "end", "name", "score", "strand"], dtype={"chrom": str, "start": int, "end": int, "name": str, "score": float, "strand": str},)
+        # only continue analysis for region if any tXn overlap with peaks
+        if narrow_sites1 is not None:
+            df_sites = narrow_sites1.to_dataframe(
+                names=["chrom", "start", "end", "name", "score", "strand"], dtype={"chrom": str, "start": int, "end": int, "name": str, "score": float, "strand": str},
+                )
+            # only continue analysis for region with over 100 thresholded sites
+            if len(df_sites) < 100:
+                print(f"less then 100 thresholded crosslink in {region}. Skipping {region}.")
+                continue
+        else:
+            print('No thresholded sites found after intersecting with the peak file. Skipping region.')
+            continue
         # subsample in order to keer RAM and time complexity reasonable
         if subsample:
             df_sites = subsample_region(df_sites, region, 1000000)
