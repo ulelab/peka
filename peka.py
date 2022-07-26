@@ -1051,7 +1051,10 @@ def run(peak_file,
     print("Getting thresholded crosslinks")
     df_txn = get_threshold_sites(sites_file, percentile=percentile)
     if df_txn is None:
-        print("Not able to find any thresholded sites.")
+        print("Not able to find any thresholded sites in your sample (NoneType). Exiting.")
+        return
+    elif len(df_txn) == 0:
+        print("Not able to find any thresholded sites in your sample (Length 0). Exiting.")
         return
     print(f"Thresholding runtime: {((time.time() - start) / 60):.2f} min for {len(df_txn)} thresholded crosslinks")
     genome_chr_sizes = "{}/genome.sizes".format(TEMP_PATH)
