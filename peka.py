@@ -1103,10 +1103,6 @@ def run(peak_file,
         sites = pbt.BedTool.from_dataframe(df_sites[["chrom", "start", "end", "name", "score", "strand"]])
         if all_outputs:
             sites.saveas(f'{output_path}/{sample_name}_thresholded_sites_{region}.bed.gz')
-        # only continue analysis for region with over 100 thresholded sites
-        if len(sites) < 100:
-            print(f"less then 100 thresholded crosslink in {region}. Skipping {region}.")
-            continue
         all_sites = pbt.BedTool.from_dataframe(df_xn_region[["chrom", "start", "end", "name", "score", "strand"]])
         # finds all crosslink sites that are not in peaks as reference for
         # normalization
