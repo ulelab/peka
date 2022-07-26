@@ -1145,7 +1145,7 @@ def run(peak_file,
         if repeats == "masked" or repeats == "repeats_only":
             kmer_pos_count = {key.replace("t", "u").replace("T", "U"): value for key, value in kmer_pos_count_t.items()}
         # get position where the kmer count is maximal
-        max_p = get_max_pos(kmer_pos_count, window_peak_l=15, window_peak_r=15)
+        max_p = get_max_pos(kmer_pos_count, window_peak_l=window, window_peak_r=window)
         # prepare dataframe for outfile
         df_out = pd.DataFrame.from_dict(max_p, orient="index", columns=["mtxn"])
         # get kmer counts in distal areas of thresholded crosslinks
