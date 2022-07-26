@@ -1066,12 +1066,13 @@ def run(peak_file,
     checkpoint1 = time.time()
     df_xn = get_all_sites(sites_file)
     if df_xn is None:
-        print("Not able to find any total sites.")
+        print("Not able to find any crosslink sites. Check your input data.")
         return
     print(f"{len(df_xn)} total sites. All sites taging runtime: {((time.time() - checkpoint1) / 60):.2f} min")
     for region in regions:
         region_start = time.time()
         # Parse sites file and keep only parts that intersect with given region
+        # Get tXn in a given region
         df_sites = df_txn.loc[df_txn["feature"].isin(REGION_SITES[region])]
         print(f"{len(df_sites)} thresholded sites on {region}")
         # Exit for less than 100 tXn
@@ -1104,11 +1105,8 @@ def run(peak_file,
         if all_outputs:
             sites.saveas(f'{output_path}/{sample_name}_thresholded_sites_{region}.bed.gz')
         all_sites = pbt.BedTool.from_dataframe(df_xn_region[["chrom", "start", "end", "name", "score", "strand"]])
-        # finds all crosslink sites that are not in peaks as reference for
-        # normalization
+        # finds all crosslink sites that are not in peaks as reference for normalization
         complement = get_complement(peak_file, "{}/genome.sizes".format(TEMP_PATH))
-        # if region == 'whole_gene':
-        #     complement = intersect(REGIONS_MAP['whole_gene_reference'], complement)
         reference = intersect(complement, all_sites)
         if reference is None:
             print(f'No reference crosslinks in {region}. Skipping {region}.')
