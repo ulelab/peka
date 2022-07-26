@@ -1074,6 +1074,11 @@ def run(peak_file,
         # Parse sites file and keep only parts that intersect with given region
         df_sites = df_txn.loc[df_txn["feature"].isin(REGION_SITES[region])]
         print(f"{len(df_sites)} thresholded sites on {region}")
+        # Exit for less than 100 tXn
+        if len(df_sites) < 100:
+            print(f"less then 100 thresholded crosslink in {region}. Skipping {region}.")
+            continue
+        # Get all crosslinks in a given region
         df_xn_region = df_xn.loc[df_xn["feature"].isin(REGION_SITES[region])]
         print(f"{len(df_xn_region)} all sites on {region}")
         sites = pbt.BedTool.from_dataframe(df_sites[["chrom", "start", "end", "name", "score", "strand"]])
