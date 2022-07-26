@@ -84,7 +84,7 @@ import scipy
 from distutils.util import strtobool
 
 
-REGIONS = ["whole_gene", "intron", "UTR3", "other_exon", "UTR5", "ncRNA", "intergenic", "genome"]
+REGIONS = ["whole_gene", "intron", "UTR3", "other_exon", "ncRNA", "intergenic", "genome"]
 REGION_SITES = {
     "genome": ["intron", "CDS", "UTR3", "UTR5", "ncRNA", "intergenic"],
     "whole_gene": ["intron", "CDS", "UTR3", "UTR5"],
@@ -1042,11 +1042,19 @@ def run(peak_file,
                             })
 
     df_params.to_csv(f'{output_path}/{sample_name}_run_parameters.tsv', sep='\t', header=False)
-
+    # Check if sites file contains intervals
+    dfCheck = parse_bed6_to_df(sites_file)
+    LenCheck = dfCheck.end - dfCheck.start
+    if LenCheck.max() > 1:
+        print(" Your crosslink file contains intervals. Exiting.")
+        return
     print("Getting thresholded crosslinks")
     df_txn = get_threshold_sites(sites_file, percentile=percentile)
     if df_txn is None:
-        print("Not able to find any thresholded sites.")
+        print("Not able to find any thresholded sites in your sample (NoneType). Exiting.")
+        return
+    elif len(df_txn) == 0:
+        print("Not able to find any thresholded sites in your sample (Length 0). Exiting.")
         return
     print(f"Thresholding runtime: {((time.time() - start) / 60):.2f} min for {len(df_txn)} thresholded crosslinks")
     genome_chr_sizes = "{}/genome.sizes".format(TEMP_PATH)
@@ -1058,20 +1066,37 @@ def run(peak_file,
     checkpoint1 = time.time()
     df_xn = get_all_sites(sites_file)
     if df_xn is None:
-        print("Not able to find any total sites.")
+        print("Not able to find any crosslink sites. Check your input data.")
         return
     print(f"{len(df_xn)} total sites. All sites taging runtime: {((time.time() - checkpoint1) / 60):.2f} min")
     for region in regions:
         region_start = time.time()
         # Parse sites file and keep only parts that intersect with given region
+        # Get tXn in a given region
         df_sites = df_txn.loc[df_txn["feature"].isin(REGION_SITES[region])]
         print(f"{len(df_sites)} thresholded sites on {region}")
+        # Exit for less than 100 tXn
+        if len(df_sites) < 100:
+            print(f"less then 100 thresholded crosslink in {region}. Skipping {region}.")
+            continue
+        # Get all crosslinks in a given region
         df_xn_region = df_xn.loc[df_xn["feature"].isin(REGION_SITES[region])]
         print(f"{len(df_xn_region)} all sites on {region}")
         sites = pbt.BedTool.from_dataframe(df_sites[["chrom", "start", "end", "name", "score", "strand"]])
         # Intersect tXn with peak_file to only retain tXn within peaks
         narrow_sites1 = intersect(peak_file, sites)
-        df_sites = narrow_sites1.to_dataframe(names=["chrom", "start", "end", "name", "score", "strand"], dtype={"chrom": str, "start": int, "end": int, "name": str, "score": float, "strand": str},)
+        # only continue analysis for region if any tXn overlap with peaks
+        if narrow_sites1 is not None:
+            df_sites = narrow_sites1.to_dataframe(
+                names=["chrom", "start", "end", "name", "score", "strand"], dtype={"chrom": str, "start": int, "end": int, "name": str, "score": float, "strand": str},
+                )
+            # only continue analysis for region with over 100 thresholded sites
+            if len(df_sites) < 100:
+                print(f"less then 100 thresholded crosslink in {region}. Skipping {region}.")
+                continue
+        else:
+            print('No thresholded sites found after intersecting with the peak file. Skipping region.')
+            continue
         # subsample in order to keer RAM and time complexity reasonable
         if subsample:
             df_sites = subsample_region(df_sites, region, 1000000)
@@ -1079,21 +1104,20 @@ def run(peak_file,
         sites = pbt.BedTool.from_dataframe(df_sites[["chrom", "start", "end", "name", "score", "strand"]])
         if all_outputs:
             sites.saveas(f'{output_path}/{sample_name}_thresholded_sites_{region}.bed.gz')
-        # only continue analysis for region with over 100 thresholded sites
-        if len(sites) < 100:
-            print(f"less then 100 thresholded crosslink in {region}. Skipping {region}.")
-            continue
         all_sites = pbt.BedTool.from_dataframe(df_xn_region[["chrom", "start", "end", "name", "score", "strand"]])
-        # finds all crosslink sites that are not in peaks as reference for
-        # normalization
+        # finds all crosslink sites that are not in peaks as reference for normalization
         complement = get_complement(peak_file, "{}/genome.sizes".format(TEMP_PATH))
-        # if region == 'whole_gene':
-        #     complement = intersect(REGIONS_MAP['whole_gene_reference'], complement)
         reference = intersect(complement, all_sites)
+        if reference is None:
+            print(f'No reference crosslinks in {region}. Skipping {region}.')
+            continue
         noxn = len(reference)
         print(f"noxn {noxn} on {region}")
         ntxn = len(sites)
         print(f"ntxn {ntxn} on {region}")
+        if len(reference) < ntxn:
+            print(f'Not enough reference crosslinks in {region} for sampling. Skipping {region}.')
+            continue
         if all_outputs:
             reference.saveas(f"{output_path}/{sample_name}_oxn_{region}.bed.gz")
         # get sequences around all crosslinks not in peaks
@@ -1115,7 +1139,7 @@ def run(peak_file,
         if repeats == "masked" or repeats == "repeats_only":
             kmer_pos_count = {key.replace("t", "u").replace("T", "U"): value for key, value in kmer_pos_count_t.items()}
         # get position where the kmer count is maximal
-        max_p = get_max_pos(kmer_pos_count, window_peak_l=15, window_peak_r=15)
+        max_p = get_max_pos(kmer_pos_count, window_peak_l=window, window_peak_r=window)
         # prepare dataframe for outfile
         df_out = pd.DataFrame.from_dict(max_p, orient="index", columns=["mtxn"])
         # get kmer counts in distal areas of thresholded crosslinks
