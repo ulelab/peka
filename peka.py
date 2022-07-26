@@ -1042,7 +1042,12 @@ def run(peak_file,
                             })
 
     df_params.to_csv(f'{output_path}/{sample_name}_run_parameters.tsv', sep='\t', header=False)
-
+    # Check if sites file contains intervals
+    dfCheck = parse_bed6_to_df(sites_file)
+    LenCheck = dfCheck.end - dfCheck.start
+    if LenCheck.max() > 1:
+        print(" Your crosslink file contains intervals. Exiting.")
+        return
     print("Getting thresholded crosslinks")
     df_txn = get_threshold_sites(sites_file, percentile=percentile)
     if df_txn is None:
