@@ -84,7 +84,7 @@ import scipy
 from distutils.util import strtobool
 
 
-REGIONS = ["whole_gene", "intron", "UTR3", "other_exon", "UTR5", "ncRNA", "intergenic", "genome"]
+REGIONS = ["whole_gene", "intron", "UTR3", "other_exon", "ncRNA", "intergenic", "genome"]
 REGION_SITES = {
     "genome": ["intron", "CDS", "UTR3", "UTR5", "ncRNA", "intergenic"],
     "whole_gene": ["intron", "CDS", "UTR3", "UTR5"],
