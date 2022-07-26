@@ -1114,10 +1114,16 @@ def run(peak_file,
         # if region == 'whole_gene':
         #     complement = intersect(REGIONS_MAP['whole_gene_reference'], complement)
         reference = intersect(complement, all_sites)
+        if reference is None:
+            print(f'No reference crosslinks in {region}. Skipping {region}.')
+            continue
         noxn = len(reference)
         print(f"noxn {noxn} on {region}")
         ntxn = len(sites)
         print(f"ntxn {ntxn} on {region}")
+        if len(reference) < ntxn:
+            print(f'Not enough reference crosslinks in {region} for sampling. Skipping {region}.')
+            continue
         if all_outputs:
             reference.saveas(f"{output_path}/{sample_name}_oxn_{region}.bed.gz")
         # get sequences around all crosslinks not in peaks
