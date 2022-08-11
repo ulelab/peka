@@ -4,6 +4,4 @@ authors:
 - family-names: "Amalietti"
   given-names: "Aram Gustav"
 title: "PEKA - Positionally-Enriched K-mer Analysis "
-version: 0.1
-date-released: 2021-12-03
 url: "https://github.com/ulelab/peka"
