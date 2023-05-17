@@ -8,6 +8,9 @@ import textdistance as td
 import sklearn.cluster
 from datetime import date as dt
 import sys
+import json
+from webcolors import rgb_to_hex
+import math
 mpl.rcParams['pdf.fonttype'] = 42
 
 
@@ -186,12 +189,64 @@ def create_labels(df_cl, ordered_motifs):
         labels.append(l)
     return labels
 
+def get_rgba(v, norm, c):
+    cmap1 = mpl.cm.get_cmap(c)
+    return cmap1(norm(v),bytes=True)[:-1]
+
+def get_representative_colors(c):
+    cmap = mpl.cm.get_cmap(c)
+    clr = [rgb_to_hex(cmap(v, bytes=True)[:-1]) for v in list(np.linspace(0.0, 1.0, num=11))]
+    return clr
+
+################################################################################
+# To save json files
+
+def get_matrix(df, norm, c, face_col='#f6ff6d'):
+    matrix = df.values
+    new_matrix = []
+    for el in matrix:
+        new_el = []
+        for v in el:
+            cell = {}
+            if math.isnan(v):
+                cell['value'] = None
+                cell['color'] = face_col
+            else:
+                cell['value'] = v
+                cell['color'] = rgb_to_hex(get_rgba(v, norm, c))
+            new_el.append(cell)
+        new_matrix.append(new_el)
+    return new_matrix
+
+def get_full_dict(df, norm, c_list, hlines, vlines, xlim, ylim, 
+                  peka_df, peka_cmap, peka_norm):
+    dict_out = {'rbp_heatmap': {}, 'PEKA_score_heatmap' : {}}
+    # For RBP heatmap save this
+    cmap = get_continuous_cmap(c_list)
+    dict_out['rbp_heatmap']['colors'] = c_list
+    dict_out['rbp_heatmap']['columns'] = df.columns.tolist()
+    dict_out['rbp_heatmap']['rows'] = df.index.tolist()
+    dict_out['rbp_heatmap']['matrix'] = get_matrix(df, norm, cmap)
+    dict_out['rbp_heatmap']['hlines'] = {'line_positions': hlines, 'line_start_end': xlim, 'linestyles': 'solid', 'colors': 'white'}
+    dict_out['rbp_heatmap']['vlines'] = {'line_positions': vlines, 'line_start_end': ylim, 'linestyles': 'dashed', 'colors': 'white'}
+    dict_out['rbp_heatmap']['yticks_font'] = 'FreeMono'
+    # For PEKA-score supplementary heatmap save this
+    dict_out['PEKA_score_heatmap']['cmap'] = get_representative_colors(peka_cmap)
+    dict_out['PEKA_score_heatmap']['columns'] = peka_df.columns.tolist()
+    dict_out['PEKA_score_heatmap']['rows'] = peka_df.index.tolist()
+    dict_out['PEKA_score_heatmap']['matrix'] = get_matrix(peka_df, peka_norm, peka_cmap)
+    return dict_out
+
+def np_encoder(object):
+    if isinstance(object, np.generic):
+        return object.item()
+
+################################################################################
 
 mpl.rcParams["font.monospace"] = "Courier"
 
 
-def get_figure(f, rtxn_f, output_path, w=25, n_top=40):
-
+def get_figure(f, rtxn_f, output_path, w=25, n_top=40, s="kmer_length", SaveJson=False):
     date = dt.today().strftime("%Y%m%d")
     pal = ["#54478c","#2c699a","#048ba8","#0db39e","#16db93","#83e377","#b9e769","#efea5a","#f1c453","#f29e4c"]
 
@@ -202,11 +257,17 @@ def get_figure(f, rtxn_f, output_path, w=25, n_top=40):
     df_data = pd.read_csv(f, sep='\t', index_col=0)
     #Get motifs for clustering.
     top_m = df_data.sort_values(by='PEKA-score', ascending=False).head(n_top).index.to_list()
+
+    if s=='kmer_length':
+        s = len(top_m[0])
+        print('smoothing window set to', s)
+    else:
+        print('smoothing window set to', s)
     #Cluster motifs based on sequence
     df_cl = get_clustered_df(top_m, 0.5, 0)
     #Import and smooth RTXN data for plotting
     df_rtxn = pd.read_csv(rtxn_f, sep='\t', index_col=0).T
-    df_smooth = smooth_df(df_rtxn, 6)
+    df_smooth = smooth_df(df_rtxn, s)
     df_cl['maxp'] = df_smooth.loc[-w:w, df_cl['motif'].values.tolist()].idxmax().values.tolist()
     #Order clusters based on max PEKA-score within cluster
     df_cl['PEKA-score'] = df_data.loc[df_cl['motif'].values.tolist(), 'PEKA-score'].values.tolist()
@@ -230,9 +291,12 @@ def get_figure(f, rtxn_f, output_path, w=25, n_top=40):
     ax = fig.add_subplot(gs[:2, 0])
     vmin = df_heatmap.min().min()
     vmax = df_heatmap.max().max()
+    rbp_minmax = {'vmin':vmin, 'vmax':vmax}
     g = sns.heatmap(df_heatmap, ax=ax, cmap=get_continuous_cmap(pal), xticklabels=True, yticklabels=True, cbar=False, vmin=vmin, vmax=vmax)
     for _, spine in g.spines.items():
         spine.set_visible(True)
+    xlim = ax.get_xlim()
+    ylim = ax.get_ylim()
     ax.hlines(hlines, *ax.get_xlim(), colors='white')
     ax.vlines(vlines, *ax.get_ylim(), colors='white', linestyles='dashed')
     ax.tick_params(left=False)
@@ -244,22 +308,44 @@ def get_figure(f, rtxn_f, output_path, w=25, n_top=40):
     ax.set_title(f'{prot} - Relative occurence around tXn for top {n_top} motifs', fontsize=18)
     cax = fig.add_subplot(gs[0, 2])
     cax.tick_params(labelsize=16)
-    cb_norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
-    fig.colorbar(mpl.cm.ScalarMappable(norm=cb_norm, cmap=get_continuous_cmap(pal)), cax=cax, ax=ax)
+    cb_norm_heatmap = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+    fig.colorbar(mpl.cm.ScalarMappable(norm=cb_norm_heatmap, cmap=get_continuous_cmap(pal)), cax=cax, ax=ax)
+    # cb_ticks = list(cax.get_yticks())
+    # Get only visible ticks
+    x0, x1 = cax.get_ylim()
+    cb_ticks = [t for t in cax.get_yticks() if t>=x0 and t<=x1]
+    # Plot PEKA-score
     ax = fig.add_subplot(gs[:2, 1])
     vmin = df_cl['PEKA-score'].min()
     vmax = df_cl['PEKA-score'].max()
-    g = sns.heatmap(df_data.loc[ordered_mots, 'PEKA-score'].to_frame(), ax=ax, vmin=vmin, vmax=vmax, cmap='gist_yarg', xticklabels=True, yticklabels=False, cbar=False)
+    peka_minmax = {'vmin':vmin, 'vmax':vmax}
+    df_peka = df_data.loc[ordered_mots, 'PEKA-score'].to_frame()
+    df_peka = df_peka.rename(index=dict(zip(ordered_mots, labels)))
+    g = sns.heatmap(df_peka, ax=ax, vmin=vmin, vmax=vmax, cmap='gist_yarg', xticklabels=True, yticklabels=False, cbar=False)
     for _, spine in g.spines.items():
         spine.set_visible(True)
     ax.set_xticklabels(labels=['PEKA-score'], fontsize=16, rotation=-30, ha='left')
     ax.tick_params(bottom=True)
     cax = fig.add_subplot(gs[1, 2])
-    cb_norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
-    fig.colorbar(mpl.cm.ScalarMappable(norm=cb_norm, cmap='gist_yarg'), cax=cax, ax=ax)
+    cb_norm_peka = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+    fig.colorbar(mpl.cm.ScalarMappable(norm=cb_norm_peka, cmap='gist_yarg'), cax=cax, ax=ax)
     cax.tick_params(labelsize=16)
+    # peka_ticks = list(cax.get_yticks())
+    # Get only visible ticks
+    x0, x1 = cax.get_ylim()
+    peka_ticks = [t for t in cax.get_yticks() if t>=x0 and t<=x1]
     plt.close()
-    fig.savefig(f'{output_path}/{date}_{prot}_heatmap_top{n_top}_clustered_rtxn_underscores.pdf', bbox_inches='tight')
+    fig.savefig(f'{output_path}/{prot}_heatmap_top{n_top}_clustered_rtxn_underscores.pdf', bbox_inches='tight')
+    if SaveJson:
+        #Save dict
+        d1 = get_full_dict(df_heatmap, cb_norm_heatmap, pal, hlines, vlines, xlim, ylim,
+                        df_peka, 'gist_yarg', cb_norm_peka)
+        d1['rbp_heatmap']['colorbar_ticks'] = [round(v, 2) for v in cb_ticks]
+        d1['rbp_heatmap']['colorbar_vmin_vmax'] = rbp_minmax
+        d1['PEKA_score_heatmap']['colorbar_ticks'] = [round(v, 2) for v in peka_ticks]
+        d1['PEKA_score_heatmap']['colorbar_vmin_vmax'] = peka_minmax
+        with open(f'{output_path}/{prot}.json', 'w') as fp:
+            json.dump(d1, fp, default=np_encoder, sort_keys=True, indent=4)
 
 def main():
     f = sys.argv[1]

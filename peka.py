@@ -533,12 +533,10 @@ def subsample_region(df_in, region, threshold):
         return df_in
 
 
-def get_sequences(sites, fasta, fai, window_l, window_r, merge_overlaps=False):
+def get_sequences(sites, fasta, fai, window_l, window_r):
     """Get genome sequences around positions defined in sites."""
     sites = pbt.BedTool(sites).sort()
     sites_extended = sites.slop(l=window_l, r=window_r, g=fai)  # noqa
-    if merge_overlaps:
-        sites_extended = sites_extended.merge(s=True)
     seq_tab = sites_extended.sequence(s=True, fi=fasta, tab=True)
     return [line.split("\t")[1].strip() for line in open(seq_tab.seqfn)]
 
@@ -1122,7 +1120,7 @@ def run(peak_file,
             reference.saveas(f"{output_path}/{sample_name}_oxn_{region}.bed.gz")
         # get sequences around all crosslinks not in peaks
         reference_sequences = get_sequences(
-            reference, genome, genome_chr_sizes, window + kmer_length, window + kmer_length, merge_overlaps=False
+            reference, genome, genome_chr_sizes, window + kmer_length, window + kmer_length
         )
         # get sequences around all thresholded crosslinks
         sequences = get_sequences(
