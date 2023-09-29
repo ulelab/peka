@@ -1,4 +1,7 @@
 # PEKA
+
+[![DOI](https://zenodo.org/badge/382275716.svg)](https://zenodo.org/badge/latestdoi/382275716)
+
 Positionally-enriched k-mer analysis (PEKA) is a software package for identifying enriched protein-RNA binding motifs from CLIP datasets. PEKA compares k-mer enrichment in proximity of high-confidence crosslink sites (tXn - thresholded crosslinks), located within crosslinking peaks and having a high cDNA count, relative to low-count crosslink sites located outside of peaks (oXn - outside crosslinks). This approach reduces the effects of technical biases, such as uridine-preference of UV crosslinking. Each k-mer is assigned a PEKA score, which is used to rank the k-mers from the most to the least enriched. Additionally, PEKA provides comprehensive visualisations of motif enrichment profiles around the high-confidence crosslink sites and clusters the motifs that display similar profiles. PEKA also enables motif discovery within specific transcriptomic regions, including or excluding repetitive elements.
 
 To interactively explore PEKA applied to all ENCODE eCLIP data, visit [iMaps](https://imaps.goodwright.org/apps/peka/).
