@@ -479,7 +479,8 @@ def get_threshold_sites(s_file, percentile=0.7):
         region_threshold_cp = time.time()
         df_reg = intersect_merge_info(region, s_file)
         if df_reg is None:
-            return
+            print(f'no {region}, skipping')
+            continue
         print(f"lenght of df_reg for {region} is: {len(df_reg)}")
         if region == "cds_utr_ncrna":
             df_reg.name = df_reg.attributes.map(lambda x: x.split(";")[1].split(" ")[1].strip('"'))
@@ -509,7 +510,7 @@ def get_all_sites(s_file):
     for region in REGIONS_QUANTILE:
         df_reg = intersect_merge_info(region, s_file)
         if df_reg is None:
-            return
+            continue
         if df_reg.empty:
             continue
         if region == "cds_utr_ncrna":
@@ -533,12 +534,10 @@ def subsample_region(df_in, region, threshold):
         return df_in
 
 
-def get_sequences(sites, fasta, fai, window_l, window_r, merge_overlaps=False):
+def get_sequences(sites, fasta, fai, window_l, window_r):
     """Get genome sequences around positions defined in sites."""
     sites = pbt.BedTool(sites).sort()
     sites_extended = sites.slop(l=window_l, r=window_r, g=fai)  # noqa
-    if merge_overlaps:
-        sites_extended = sites_extended.merge(s=True)
     seq_tab = sites_extended.sequence(s=True, fi=fasta, tab=True)
     return [line.split("\t")[1].strip() for line in open(seq_tab.seqfn)]
 
@@ -1073,8 +1072,14 @@ def run(peak_file,
         region_start = time.time()
         # Parse sites file and keep only parts that intersect with given region
         # Get tXn in a given region
-        df_sites = df_txn.loc[df_txn["feature"].isin(REGION_SITES[region])]
-        print(f"{len(df_sites)} thresholded sites on {region}")
+        regs_list = [r for r in REGION_SITES[region] if r in df_txn['feature'].unique().tolist()]
+        df_sites = df_txn.loc[df_txn["feature"].isin(regs_list)]
+        if len(regs_list) >= 1:
+            print(region, 'is represented by these annotated features:', regs_list)
+        else:
+            print(f'features corresponding to {region} were not found in regions gtf file. Skipping {intron}.')
+            continue
+        print(f"{len(df_sites)} passing foreground threshold on {region}")
         # Exit for less than 100 tXn
         if len(df_sites) < 100:
             print(f"less then 100 thresholded crosslink in {region}. Skipping {region}.")
@@ -1122,7 +1127,7 @@ def run(peak_file,
             reference.saveas(f"{output_path}/{sample_name}_oxn_{region}.bed.gz")
         # get sequences around all crosslinks not in peaks
         reference_sequences = get_sequences(
-            reference, genome, genome_chr_sizes, window + kmer_length, window + kmer_length, merge_overlaps=False
+            reference, genome, genome_chr_sizes, window + kmer_length, window + kmer_length
         )
         # get sequences around all thresholded crosslinks
         sequences = get_sequences(
