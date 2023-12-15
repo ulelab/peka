@@ -941,7 +941,7 @@ def plot_positional_distribution(df_in, df_sum, c_dict, c_rank, name, cluster_re
         axs[axs_x, axs_y].set(xlabel=xlabel, ylabel=ylabel, title="Cluster of kmers {}".format(c_name))
         df_plot = df_in[c_dict[cluster]]
         df_plot = df_plot[df_plot.index.isin(range(-50, 51))]
-        sns.lineplot(data=df_plot, ax=axs[axs_x, axs_y], ci=None, **lineplot_kwrgs)
+        sns.lineplot(data=df_plot, ax=axs[axs_x, axs_y], errorbar=None, **lineplot_kwrgs)
     # final plot of summed clusters in a wider window
     df_ordered = df_sum[list(rank_ordered.values())].rename(columns=cluster_rename)
     axs_x_sumplt = c_num // 2
@@ -950,7 +950,7 @@ def plot_positional_distribution(df_in, df_sum, c_dict, c_rank, name, cluster_re
         xlabel=xlabel, ylabel="Kmer cluster occurence (%)", title="Summed occurrence of kmers in each cluster"
     )
     axs[axs_x_sumplt, axs_y_sumplt].set_xlim(-150, 100)
-    sns.lineplot(data=df_ordered, ax=axs[axs_x_sumplt, axs_y_sumplt], ci=None, **lineplot_kwrgs)
+    sns.lineplot(data=df_ordered, ax=axs[axs_x_sumplt, axs_y_sumplt], errorbar=None, **lineplot_kwrgs)
     fig.savefig(f"{output_path}/{name}_{kmer_length}mer_{region}.pdf", format="pdf")
 
 def run(peak_file,
