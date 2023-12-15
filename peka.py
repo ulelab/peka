@@ -404,11 +404,12 @@ def cut_sites_with_region(df_sites, df_region):
     df_m = df_sites[df_sites["strand"] == "-"].copy()
     df_region_p = df_region[df_region["strand"] == "+"].copy()
     df_region_m = df_region[df_region["strand"] == "-"].copy()
-    df_cut = pd.DataFrame(columns=["chrom", "start", "end", "name", "score", "strand", "feature", "attributes", "cut"])
+    dfs = []
+    cols = ["chrom", "start", "end", "name", "score", "strand", "feature", "attributes", "cut"]
     for chrom in set(df_region["chrom"].values):
         df_temp = cut_per_chrom(chrom, df_p, df_m, df_region_p, df_region_m)
-        df_temp = df_temp[df_cut.columns]
-        df_cut = pd.concat([df_cut, df_temp], ignore_index=True)
+        dfs.append(df_temp[cols])
+    df_cut = pd.concat(dfs, ignore_index=True)
     return df_cut.dropna(axis=0)
 
 
