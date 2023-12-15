@@ -246,7 +246,7 @@ def parse_bed6_to_df(p_file):
 
 def parse_region_to_df(region_file):
     """Parse GTF to pandas.DataFrame."""
-    return pd.read_csv(
+    df = pd.read_csv(
         region_file,
         names=["chrom", "second", "region", "start", "end", "sixth", "strand", "eighth", "id_name_biotype"],
         sep="\t",
@@ -263,6 +263,9 @@ def parse_region_to_df(region_file):
             "id_name_biotype": str,
         },
     )
+    # Convert start from 1-based to 0-based coordinates to match BED format
+    df['start'] = df['start'] - 1
+    return df
 
 
 def filter_cds_utr_ncrna(df_in):
@@ -286,24 +289,8 @@ def filter_intron(df_in, min_size):
 
 
 def get_regions_map(regions_file):
-    """Prepare temporary files based on GTF file that defines regions."""
-    df_regions = pd.read_csv(
-        regions_file,
-        sep="\t",
-        header=None,
-        names=["chrom", "second", "region", "start", "end", "sixth", "strand", "eighth", "id_name_biotype"],
-        dtype={
-            "chrom": str,
-            "second": str,
-            "region": str,
-            "start": int,
-            "end": int,
-            "sixth": str,
-            "strand": str,
-            "eight": str,
-            "id_name_biotype": str,
-        },
-    )
+    """Prepare temporary BED files based on GTF file that defines regions."""
+    df_regions = parse_region_to_df(regions_file)
     df_intergenic = df_regions.loc[df_regions["region"] == "intergenic"]
     df_cds_utr_ncrna = df_regions.loc[df_regions["region"].isin(["CDS", "UTR3", "UTR5", "ncRNA"])]
     df_intron = df_regions.loc[df_regions["region"] == "intron"]
@@ -412,7 +399,7 @@ def cut_per_chrom(chrom, df_p, df_m, df_peaks_p, df_peaks_m):
 
 
 def cut_sites_with_region(df_sites, df_region):
-    """Find peak interval the crosslinks belong to."""
+    """Find the interval the crosslinks belong to."""
     df_p = df_sites[df_sites["strand"] == "+"].copy()
     df_m = df_sites[df_sites["strand"] == "-"].copy()
     df_region_p = df_region[df_region["strand"] == "+"].copy()
@@ -449,7 +436,7 @@ def intersect_merge_info(region, s_file):
                 "name": str,
                 "score": str,
                 "strand": str,
-                "frame": str,
+                "feature": str,
                 "attributes": str,
             },
         )
