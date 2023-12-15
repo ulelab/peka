@@ -10,18 +10,18 @@ For a more detailed description of PEKA method please refer to our preprint http
 Author: aram.amalietti@gmail.com
 
 
-## Dependencies:
+## Dependencies (due to a breaking change in pandas >=1 using the versions below is recommended):
 ```
-python
-matplotlib
-numpy
-pybedtools
-scipy
-seaborn
-plumbum
-scikit-learn
-pandas
-textdistance
+python=3.7
+matplotlib=3.1.2
+numpy=1.17.4
+pybedtools=0.8.0
+scipy=1.6.2
+seaborn=0.9.0
+plumbum=1.6.8
+scikit-learn=0.21.3
+pandas=0.24.2
+textdistance=4.1.3
 ```
 
 ## Set up
@@ -60,10 +60,7 @@ usage: peka.py [-h] -i INPUTPEAKS -x INPUTXLSITES -g GENOMEFASTA -gi GENOMEINDEX
                [-seed {True,False}]
 ```
 
-You can check your installation by going to the TestData directory and running the run_peka.sh script within the activated peka environment.
-This script uses a small test dataset found in TestData/inputs.
-
-🔴 **IMPORTANT NOTE!** When you run PEKA on your data, make sure all the required inputs, i.e. bed files, genome in fasta format, genome index and regions file, follow the same naming convention for chromosome names. Either all files must use the UCSC (GENCODE) naming convention, which prefixes chromosome names with "chr" ("chr1", ..., "chrM") or all files should use Ensembl naming convention ("1", ..., "MT").
+🔴 **IMPORTANT NOTE!** Make sure all the required inputs, i.e. bed files, genome in fasta format, genome index and regions file, follow the same naming convention for chromosome names. Either all files must use the UCSC (GENCODE) naming convention, which prefixes chromosome names with "chr" ("chr1", ..., "chrM") or all files should use Ensembl naming convention ("1", ..., "MT").
 
 ```
 required arguments:
@@ -159,6 +156,15 @@ optional arguments:
 
 ## Common issues
 
+If you have one of the following errors, it is because the numpy/pandas versions you are running are incompatible with PEKA.
+To ensure you are using the correct versions, we recommend using our conda environment.
+```
+AttributeError: type object 'object' has no attribute 'dtype'
+```
+or
+```
+TypeError: sum() got an unexpected keyword argument 'axis'
+```
 The script needs writing permission in the staging directory to save results and make an environment variable `TMPDIR` for temporary files.
 If you get `KeyError: 'TMPDIR'` a solution would be to type `export TMPDIR=<path_to_folder>` in terminal where you want to run the script.
 
