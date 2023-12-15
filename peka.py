@@ -263,8 +263,6 @@ def parse_region_to_df(region_file):
             "id_name_biotype": str,
         },
     )
-    # Convert start from 1-based to 0-based coordinates to match BED format
-    df['start'] = df['start'] - 1
     return df
 
 
@@ -289,7 +287,7 @@ def filter_intron(df_in, min_size):
 
 
 def get_regions_map(regions_file):
-    """Prepare temporary BED files based on GTF file that defines regions."""
+    """Prepare temporary GTF files based on GTF file that defines regions."""
     df_regions = parse_region_to_df(regions_file)
     df_intergenic = df_regions.loc[df_regions["region"] == "intergenic"]
     df_cds_utr_ncrna = df_regions.loc[df_regions["region"].isin(["CDS", "UTR3", "UTR5", "ncRNA"])]
@@ -297,9 +295,9 @@ def get_regions_map(regions_file):
     df_cds_utr_ncrna = filter_cds_utr_ncrna(df_cds_utr_ncrna)
     df_intron = filter_intron(df_intron, 100)
     to_csv_kwrgs = {"sep": "\t", "header": None, "index": None}
-    df_intron.to_csv("{}/intron_regions.bed".format(TEMP_PATH), **to_csv_kwrgs)
-    df_intergenic.to_csv("{}/intergenic_regions.bed".format(TEMP_PATH), **to_csv_kwrgs)
-    df_cds_utr_ncrna.to_csv("{}/cds_utr_ncrna_regions.bed".format(TEMP_PATH), **to_csv_kwrgs)
+    df_intron.to_csv("{}/intron_regions.gtf".format(TEMP_PATH), **to_csv_kwrgs)
+    df_intergenic.to_csv("{}/intergenic_regions.gtf".format(TEMP_PATH), **to_csv_kwrgs)
+    df_cds_utr_ncrna.to_csv("{}/cds_utr_ncrna_regions.gtf".format(TEMP_PATH), **to_csv_kwrgs)
 
 
 def remove_chr(df_in, chr_sizes, chr_name=["chrM", "MT"]):
@@ -400,6 +398,8 @@ def cut_per_chrom(chrom, df_p, df_m, df_peaks_p, df_peaks_m):
 
 def cut_sites_with_region(df_sites, df_region):
     """Find the interval the crosslinks belong to."""
+    # As df_regions is in 1-based GTF format, we convert start coord to 0-based
+    df_region["start"] = df_region["start"] - 1
     df_p = df_sites[df_sites["strand"] == "+"].copy()
     df_m = df_sites[df_sites["strand"] == "-"].copy()
     df_region_p = df_region[df_region["strand"] == "+"].copy()
@@ -416,7 +416,10 @@ def cut_sites_with_region(df_sites, df_region):
 def percentile_filter_xlinks(df_in, percentile=0.7):
     """Calculate threshold and filter sites by it."""
     df_in["cut"] = df_in["cut"].astype(str)
-    df_in["quantile"] = df_in["cut"].map(df_in.groupby("cut").quantile(q=percentile)["score"])
+    # Calculate quantiles for each group in 'cut' for the 'score' column
+    score_quantiles = df_in.groupby("cut")["score"].quantile(q=percentile)
+    # Map these quantiles back to the original DataFrame
+    df_in["quantile"] = df_in["cut"].map(score_quantiles)
     df_in = df_in[df_in["score"] > df_in["quantile"]]
     return df_in[["chrom", "start", "end", "name", "score", "strand", "feature", "attributes"]]
 
@@ -435,7 +438,7 @@ def intersect_merge_info(region, s_file):
                 "start": int,
                 "end": int,
                 "name": str,
-                "score": str,
+                "score": int,
                 "strand": str,
                 "feature": str,
                 "attributes": str,
@@ -474,7 +477,8 @@ def get_threshold_sites(s_file, percentile=0.7):
                 df_reg["quantile"] = 0
             # If percentile is >0, score threshold is determined for each gene.
             else:
-                df_reg["quantile"] = df_reg["name"].map(df_reg.groupby(["name"]).quantile(q=percentile)["score"])
+                score_quantiles = df_reg.groupby("name")["score"].quantile(q=percentile)
+                df_reg["quantile"] = df_reg["name"].map(score_quantiles)
             df_filtered = df_reg[df_reg["score"] > df_reg["quantile"]].drop(columns=["quantile"])
             df_out = pd.concat([df_out, df_filtered], ignore_index=True, sort=False)
         if region in ["intron", "intergenic"]:
@@ -1007,9 +1011,9 @@ def run(peak_file,
     get_regions_map(regions_file)
     global REGIONS_MAP
     REGIONS_MAP = {
-        "intron": "{}/intron_regions.bed".format(TEMP_PATH),
-        "intergenic": "{}/intergenic_regions.bed".format(TEMP_PATH),
-        "cds_utr_ncrna": "{}/cds_utr_ncrna_regions.bed".format(TEMP_PATH),
+        "intron": "{}/intron_regions.gtf".format(TEMP_PATH),
+        "intergenic": "{}/intergenic_regions.gtf".format(TEMP_PATH),
+        "cds_utr_ncrna": "{}/cds_utr_ncrna_regions.gtf".format(TEMP_PATH),
     }
     # Save run parameters into file
     df_params = pd.Series(data={"peak_file": peak_file,
