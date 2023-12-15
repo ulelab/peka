@@ -78,7 +78,7 @@ from plumbum import local
 from plumbum.cmd import sort, gunzip
 from sklearn.cluster import AffinityPropagation
 from sklearn.exceptions import ConvergenceWarning
-from sklearn.utils.testing import ignore_warnings
+import warnings
 import argparse
 import scipy
 from distutils.util import strtobool
@@ -642,6 +642,13 @@ def get_average_poscount(pos_c):
             avg[key] = value
     return avg
 
+# Define a decorator to ignore convergence warning
+def ignore_convergence_warnings(func):
+    def wrapper(*args, **kwargs):
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=ConvergenceWarning)
+            return func(*args, **kwargs)
+    return wrapper
 
 @ignore_warnings(category=ConvergenceWarning)
 def get_clustering(kmer_pos_count, x1, x2, kmer_length, window, smoot):
