@@ -1273,7 +1273,7 @@ def run(peak_file,
             else:
                 # Use strict threshold
                 prtxn_conf = P_kmer_at_pos
-        print('prtxn confidence:', prtxn_conf)
+        print('prtxn confidence is set to:', prtxn_conf)
 
         threshold = {pos: np.percentile(values, prtxn_conf, axis=0) for pos, values in temp_combined_roxn.items()}
 
@@ -1285,11 +1285,13 @@ def run(peak_file,
                         prtxn[kmer].append(pos)
                 except KeyError:
                     pass
+        kmersWithRelevantPos = [k for k, v in prtxn.items() if v!=[]]
+        print(f'n k-mers with relevant positions {len(kmersWithRelevantPos)} / {n_possible_kmers}')
         # Leave an empty list for prtxn if none of the positions passed the relevant positions threshold
         random_aroxn = []
         for roxn_sample in random_roxn:
             aroxn_sample = {
-                x: np.mean([roxn_sample[x][y] for y in prtxn[x] if y in roxn_sample[x].keys()]) for x in roxn_sample
+                x: np.mean([roxn_sample[x][y] for y in prtxn[x] if y in roxn_sample[x].keys()]) for x in kmersWithRelevantPos
             }
             random_aroxn.append(aroxn_sample)
         prtxn_concat = {}
@@ -1299,12 +1301,12 @@ def run(peak_file,
         df_out = pd.merge(df_out, df_prtxn, left_index=True, right_index=True, how='outer')
         # calculate average relative occurences for each kmer around thresholded
         # crosslinks across relevant positions and add it to outfile table
-        artxn = {x: np.mean([rtxn[x][y] for y in prtxn[x]]) for x in rtxn}
+        artxn = {x: np.mean([rtxn[x][y] for y in prtxn[x]]) for x in kmersWithRelevantPos}
         df_artxn = pd.DataFrame.from_dict(artxn, orient="index", columns=["artxn"])
         df_out = pd.merge(df_out, df_artxn, left_index=True, right_index=True, how='outer')
         # calculate average relative occurences for each kmer around reference
         # crosslinks across relevant positions and add it to outfile table
-        aroxn = {x: np.mean([roxn[x][y] for y in prtxn[x] if y in roxn[x].keys()]) for x in roxn}
+        aroxn = {x: np.mean([roxn[x][y] for y in prtxn[x] if y in roxn[x].keys()]) for x in kmersWithRelevantPos}
         df_aroxn = pd.DataFrame.from_dict(aroxn, orient="index", columns=["aroxn"])
         df_out = pd.merge(df_out, df_aroxn, left_index=True, right_index=True, how='outer')
         # calculate log2 of ratio between average relative occurences between
