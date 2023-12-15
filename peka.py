@@ -650,7 +650,7 @@ def ignore_convergence_warnings(func):
             return func(*args, **kwargs)
     return wrapper
 
-@ignore_warnings(category=ConvergenceWarning)
+@ignore_convergence_warnings
 def get_clustering(kmer_pos_count, x1, x2, kmer_length, window, smoot):
     """Smoothen positional data for each kmer and then cluster kmers.
 
