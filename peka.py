@@ -78,7 +78,7 @@ from plumbum import local
 from plumbum.cmd import sort, gunzip
 from sklearn.cluster import AffinityPropagation
 from sklearn.exceptions import ConvergenceWarning
-from sklearn.utils.testing import ignore_warnings
+import warnings
 import argparse
 import scipy
 from distutils.util import strtobool
@@ -246,7 +246,7 @@ def parse_bed6_to_df(p_file):
 
 def parse_region_to_df(region_file):
     """Parse GTF to pandas.DataFrame."""
-    return pd.read_csv(
+    df = pd.read_csv(
         region_file,
         names=["chrom", "second", "region", "start", "end", "sixth", "strand", "eighth", "id_name_biotype"],
         sep="\t",
@@ -263,6 +263,7 @@ def parse_region_to_df(region_file):
             "id_name_biotype": str,
         },
     )
+    return df
 
 
 def filter_cds_utr_ncrna(df_in):
@@ -286,33 +287,17 @@ def filter_intron(df_in, min_size):
 
 
 def get_regions_map(regions_file):
-    """Prepare temporary files based on GTF file that defines regions."""
-    df_regions = pd.read_csv(
-        regions_file,
-        sep="\t",
-        header=None,
-        names=["chrom", "second", "region", "start", "end", "sixth", "strand", "eighth", "id_name_biotype"],
-        dtype={
-            "chrom": str,
-            "second": str,
-            "region": str,
-            "start": int,
-            "end": int,
-            "sixth": str,
-            "strand": str,
-            "eight": str,
-            "id_name_biotype": str,
-        },
-    )
+    """Prepare temporary GTF files based on GTF file that defines regions."""
+    df_regions = parse_region_to_df(regions_file)
     df_intergenic = df_regions.loc[df_regions["region"] == "intergenic"]
     df_cds_utr_ncrna = df_regions.loc[df_regions["region"].isin(["CDS", "UTR3", "UTR5", "ncRNA"])]
     df_intron = df_regions.loc[df_regions["region"] == "intron"]
     df_cds_utr_ncrna = filter_cds_utr_ncrna(df_cds_utr_ncrna)
     df_intron = filter_intron(df_intron, 100)
     to_csv_kwrgs = {"sep": "\t", "header": None, "index": None}
-    df_intron.to_csv("{}/intron_regions.bed".format(TEMP_PATH), **to_csv_kwrgs)
-    df_intergenic.to_csv("{}/intergenic_regions.bed".format(TEMP_PATH), **to_csv_kwrgs)
-    df_cds_utr_ncrna.to_csv("{}/cds_utr_ncrna_regions.bed".format(TEMP_PATH), **to_csv_kwrgs)
+    df_intron.to_csv("{}/intron_regions.gtf".format(TEMP_PATH), **to_csv_kwrgs)
+    df_intergenic.to_csv("{}/intergenic_regions.gtf".format(TEMP_PATH), **to_csv_kwrgs)
+    df_cds_utr_ncrna.to_csv("{}/cds_utr_ncrna_regions.gtf".format(TEMP_PATH), **to_csv_kwrgs)
 
 
 def remove_chr(df_in, chr_sizes, chr_name=["chrM", "MT"]):
@@ -412,23 +397,29 @@ def cut_per_chrom(chrom, df_p, df_m, df_peaks_p, df_peaks_m):
 
 
 def cut_sites_with_region(df_sites, df_region):
-    """Find peak interval the crosslinks belong to."""
+    """Find the interval the crosslinks belong to."""
+    # As df_regions is in 1-based GTF format, we convert start coord to 0-based
+    df_region["start"] = df_region["start"] - 1
     df_p = df_sites[df_sites["strand"] == "+"].copy()
     df_m = df_sites[df_sites["strand"] == "-"].copy()
     df_region_p = df_region[df_region["strand"] == "+"].copy()
     df_region_m = df_region[df_region["strand"] == "-"].copy()
-    df_cut = pd.DataFrame(columns=["chrom", "start", "end", "name", "score", "strand", "feature", "attributes", "cut"])
+    dfs = []
+    cols = ["chrom", "start", "end", "name", "score", "strand", "feature", "attributes", "cut"]
     for chrom in set(df_region["chrom"].values):
         df_temp = cut_per_chrom(chrom, df_p, df_m, df_region_p, df_region_m)
-        df_temp = df_temp[df_cut.columns]
-        df_cut = pd.concat([df_cut, df_temp], ignore_index=True)
+        dfs.append(df_temp[cols])
+    df_cut = pd.concat(dfs, ignore_index=True)
     return df_cut.dropna(axis=0)
 
 
 def percentile_filter_xlinks(df_in, percentile=0.7):
     """Calculate threshold and filter sites by it."""
     df_in["cut"] = df_in["cut"].astype(str)
-    df_in["quantile"] = df_in["cut"].map(df_in.groupby("cut").quantile(q=percentile)["score"])
+    # Calculate quantiles for each group in 'cut' for the 'score' column
+    score_quantiles = df_in.groupby("cut")["score"].quantile(q=percentile)
+    # Map these quantiles back to the original DataFrame
+    df_in["quantile"] = df_in["cut"].map(score_quantiles)
     df_in = df_in[df_in["score"] > df_in["quantile"]]
     return df_in[["chrom", "start", "end", "name", "score", "strand", "feature", "attributes"]]
 
@@ -437,31 +428,28 @@ def intersect_merge_info(region, s_file):
     """Intersect while keeping information from region file."""
     interval_file = REGIONS_MAP[region]
     try:
-        df_1 = intersect(interval_file, s_file).to_dataframe(
-            names=["chrom", "start", "end", "name", "score", "strand"],
-            dtype={"chrom": str, "start": int, "end": int, "name": str, "score": float, "strand": str},
-        )
-        df_1 = df_1.groupby(["chrom", "start", "end", "strand"], as_index=False)["score"].sum(axis=0)
-        df_1["name"] = "."
-        df_2 = intersect(s_file, interval_file).to_dataframe(
-            names=["seqname", "source", "feature", "start", "end", "score", "strand", "frame", "attributes"],
+        # Obtain crosslinks located within a given region
+        bed_1 = intersect(interval_file, s_file)
+        # Annotate crosslinks with region and attributes
+        df_1 = bed_1.map(pbt.BedTool(interval_file).sort(), s=True, c=[3, 9], o='collapse', nonamecheck=True).sort().to_dataframe(
+            names=["chrom", "start", "end", "name", "score", "strand", "feature", "attributes"],
             dtype={
-                "seqname": str,
-                "source": str,
-                "feature": str,
+                "chrom": str,
                 "start": int,
                 "end": int,
-                "score": str,
+                "name": str,
+                "score": int,
                 "strand": str,
-                "frame": str,
+                "feature": str,
                 "attributes": str,
             },
         )
-        df_2.drop_duplicates(subset=["seqname", "start", "end", "strand"], keep="first")
+        df_1["name"] = "."
+        df_1 = df_1.groupby(["chrom", "start", "end", "name", "strand", "feature", "attributes"], as_index=False)["score"].sum()
     except AttributeError:
+        print('Attribute Error in intersect_merge_info')
         return
-    df_2 = df_2.drop(columns=["source", "score", "frame", "start"]).rename(index=str, columns={"seqname": "chrom"})
-    return pd.merge(df_1, df_2, on=["chrom", "strand", "end"])
+    return df_1
 
 
 def get_threshold_sites(s_file, percentile=0.7):
@@ -489,7 +477,8 @@ def get_threshold_sites(s_file, percentile=0.7):
                 df_reg["quantile"] = 0
             # If percentile is >0, score threshold is determined for each gene.
             else:
-                df_reg["quantile"] = df_reg["name"].map(df_reg.groupby(["name"]).quantile(q=percentile)["score"])
+                score_quantiles = df_reg.groupby("name")["score"].quantile(q=percentile)
+                df_reg["quantile"] = df_reg["name"].map(score_quantiles)
             df_filtered = df_reg[df_reg["score"] > df_reg["quantile"]].drop(columns=["quantile"])
             df_out = pd.concat([df_out, df_filtered], ignore_index=True, sort=False)
         if region in ["intron", "intergenic"]:
@@ -642,8 +631,15 @@ def get_average_poscount(pos_c):
             avg[key] = value
     return avg
 
+# Define a decorator to ignore convergence warning
+def ignore_convergence_warnings(func):
+    def wrapper(*args, **kwargs):
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=ConvergenceWarning)
+            return func(*args, **kwargs)
+    return wrapper
 
-@ignore_warnings(category=ConvergenceWarning)
+@ignore_convergence_warnings
 def get_clustering(kmer_pos_count, x1, x2, kmer_length, window, smoot):
     """Smoothen positional data for each kmer and then cluster kmers.
 
@@ -945,7 +941,7 @@ def plot_positional_distribution(df_in, df_sum, c_dict, c_rank, name, cluster_re
         axs[axs_x, axs_y].set(xlabel=xlabel, ylabel=ylabel, title="Cluster of kmers {}".format(c_name))
         df_plot = df_in[c_dict[cluster]]
         df_plot = df_plot[df_plot.index.isin(range(-50, 51))]
-        sns.lineplot(data=df_plot, ax=axs[axs_x, axs_y], ci=None, **lineplot_kwrgs)
+        sns.lineplot(data=df_plot, ax=axs[axs_x, axs_y], errorbar=None, **lineplot_kwrgs)
     # final plot of summed clusters in a wider window
     df_ordered = df_sum[list(rank_ordered.values())].rename(columns=cluster_rename)
     axs_x_sumplt = c_num // 2
@@ -954,7 +950,7 @@ def plot_positional_distribution(df_in, df_sum, c_dict, c_rank, name, cluster_re
         xlabel=xlabel, ylabel="Kmer cluster occurence (%)", title="Summed occurrence of kmers in each cluster"
     )
     axs[axs_x_sumplt, axs_y_sumplt].set_xlim(-150, 100)
-    sns.lineplot(data=df_ordered, ax=axs[axs_x_sumplt, axs_y_sumplt], ci=None, **lineplot_kwrgs)
+    sns.lineplot(data=df_ordered, ax=axs[axs_x_sumplt, axs_y_sumplt], errorbar=None, **lineplot_kwrgs)
     fig.savefig(f"{output_path}/{name}_{kmer_length}mer_{region}.pdf", format="pdf")
 
 def run(peak_file,
@@ -1015,9 +1011,9 @@ def run(peak_file,
     get_regions_map(regions_file)
     global REGIONS_MAP
     REGIONS_MAP = {
-        "intron": "{}/intron_regions.bed".format(TEMP_PATH),
-        "intergenic": "{}/intergenic_regions.bed".format(TEMP_PATH),
-        "cds_utr_ncrna": "{}/cds_utr_ncrna_regions.bed".format(TEMP_PATH),
+        "intron": "{}/intron_regions.gtf".format(TEMP_PATH),
+        "intergenic": "{}/intergenic_regions.gtf".format(TEMP_PATH),
+        "cds_utr_ncrna": "{}/cds_utr_ncrna_regions.gtf".format(TEMP_PATH),
     }
     # Save run parameters into file
     df_params = pd.Series(data={"peak_file": peak_file,
@@ -1277,7 +1273,7 @@ def run(peak_file,
             else:
                 # Use strict threshold
                 prtxn_conf = P_kmer_at_pos
-        print('prtxn confidence:', prtxn_conf)
+        print('prtxn confidence is set to:', prtxn_conf)
 
         threshold = {pos: np.percentile(values, prtxn_conf, axis=0) for pos, values in temp_combined_roxn.items()}
 
@@ -1289,11 +1285,13 @@ def run(peak_file,
                         prtxn[kmer].append(pos)
                 except KeyError:
                     pass
+        kmersWithRelevantPos = [k for k, v in prtxn.items() if v!=[]]
+        print(f'n k-mers with relevant positions {len(kmersWithRelevantPos)} / {n_possible_kmers}')
         # Leave an empty list for prtxn if none of the positions passed the relevant positions threshold
         random_aroxn = []
         for roxn_sample in random_roxn:
             aroxn_sample = {
-                x: np.mean([roxn_sample[x][y] for y in prtxn[x] if y in roxn_sample[x].keys()]) for x in roxn_sample
+                x: np.mean([roxn_sample[x][y] for y in prtxn[x] if y in roxn_sample[x].keys()]) for x in kmersWithRelevantPos
             }
             random_aroxn.append(aroxn_sample)
         prtxn_concat = {}
@@ -1303,12 +1301,12 @@ def run(peak_file,
         df_out = pd.merge(df_out, df_prtxn, left_index=True, right_index=True, how='outer')
         # calculate average relative occurences for each kmer around thresholded
         # crosslinks across relevant positions and add it to outfile table
-        artxn = {x: np.mean([rtxn[x][y] for y in prtxn[x]]) for x in rtxn}
+        artxn = {x: np.mean([rtxn[x][y] for y in prtxn[x]]) for x in kmersWithRelevantPos}
         df_artxn = pd.DataFrame.from_dict(artxn, orient="index", columns=["artxn"])
         df_out = pd.merge(df_out, df_artxn, left_index=True, right_index=True, how='outer')
         # calculate average relative occurences for each kmer around reference
         # crosslinks across relevant positions and add it to outfile table
-        aroxn = {x: np.mean([roxn[x][y] for y in prtxn[x] if y in roxn[x].keys()]) for x in roxn}
+        aroxn = {x: np.mean([roxn[x][y] for y in prtxn[x] if y in roxn[x].keys()]) for x in kmersWithRelevantPos}
         df_aroxn = pd.DataFrame.from_dict(aroxn, orient="index", columns=["aroxn"])
         df_out = pd.merge(df_out, df_aroxn, left_index=True, right_index=True, how='outer')
         # calculate log2 of ratio between average relative occurences between
