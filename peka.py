@@ -437,31 +437,28 @@ def intersect_merge_info(region, s_file):
     """Intersect while keeping information from region file."""
     interval_file = REGIONS_MAP[region]
     try:
-        df_1 = intersect(interval_file, s_file).to_dataframe(
-            names=["chrom", "start", "end", "name", "score", "strand"],
-            dtype={"chrom": str, "start": int, "end": int, "name": str, "score": float, "strand": str},
-        )
-        df_1 = df_1.groupby(["chrom", "start", "end", "strand"], as_index=False)["score"].sum(axis=0)
-        df_1["name"] = "."
-        df_2 = intersect(s_file, interval_file).to_dataframe(
-            names=["seqname", "source", "feature", "start", "end", "score", "strand", "frame", "attributes"],
+        # Obtain crosslinks located within a given region
+        bed_1 = intersect(interval_file, s_file)
+        # Annotate crosslinks with region and attributes
+        df_1 = bed_1.map(pbt.BedTool(interval_file).sort(), s=True, c=[3, 9], o='collapse', nonamecheck=True).sort().to_dataframe(
+            names=["chrom", "start", "end", "name", "score", "strand", "feature", "attributes"],
             dtype={
-                "seqname": str,
-                "source": str,
-                "feature": str,
+                "chrom": str,
                 "start": int,
                 "end": int,
+                "name": str,
                 "score": str,
                 "strand": str,
                 "frame": str,
                 "attributes": str,
             },
         )
-        df_2.drop_duplicates(subset=["seqname", "start", "end", "strand"], keep="first")
+        df_1["name"] = "."
+        df_1 = df_1.groupby(["chrom", "start", "end", "name", "strand", "feature", "attributes"], as_index=False)["score"].sum()
     except AttributeError:
+        print('Attribute Error in intersect_merge_info')
         return
-    df_2 = df_2.drop(columns=["source", "score", "frame", "start"]).rename(index=str, columns={"seqname": "chrom"})
-    return pd.merge(df_1, df_2, on=["chrom", "strand", "end"])
+    return df_1
 
 
 def get_threshold_sites(s_file, percentile=0.7):
