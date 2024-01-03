@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="PEKA",
-    version="0.1.4",
+    version="1.0.0",
     author="Aram Amalietti",
     author_email="aram.amalietti@gmail.com",
     description=(
