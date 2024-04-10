@@ -5,9 +5,9 @@ output_dir='./results' #Adjust this path to your output directory
 python3 ../peka.py \
 -i './inputs/K562-TIA1-chr20.xl_peaks.bed.gz' \
 -x './inputs/K562-TIA1-chr20.xl.bed.gz' \
--g './inputs/GRCh38.p12.genome.masked.fa' \
--gi './inputs/GRCh38.p12.genome.masked.fa.fai' \
--r './inputs/sorted.regions.gtf.gz' \
+-g './inputs/chr20.GRCh38.p12.genome.masked.fa' \
+-gi './inputs/chr20.GRCh38.p12.genome.masked.fa.fai' \
+-r './inputs/chr20.regions.gtf' \
 -sr intron UTR3 whole_gene \
 -o $output_dir \
 -re unmasked \
