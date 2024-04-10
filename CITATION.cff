@@ -1,9 +1,30 @@
-cff-version: 1.0.0
-message: "If you use this software, please cite it as below."
+message: "If you use this software, please cite our paper: Kuret, K., Amalietti, A.G., Jones, D.M. et al. Positional motif analysis reveals the extent of specificity of protein-RNA interactions observed by CLIP. Genome Biol 23, 191 (2022). https://doi.org/10.1186/s13059-022-02755-2"
 authors:
 - family-names: "Amalietti"
   given-names: "Aram Gustav"
+- family-names: "Kuret"
+  given-names: "Klara"
 title: "PEKA - Positionally-Enriched K-mer Analysis "
 url: "https://github.com/ulelab/peka"
 doi: 10.5281/zenodo.8388965
 date-released: 2021-07-02
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Kuret"
+    given-names: "Klara"
+  - family-names: "Amalietti"
+    given-names: "Aram Gustav"
+  - family-names: "Jones"
+    given-names: "Marc"
+  - family-names: "Capitanchik"
+    given-names: "Charlotte"
+  - family-names: "Ule"
+    given-names: "Jernej"
+  title: "Positional motif analysis reveals the extent of specificity of protein-RNA interactions observed by CLIP"
+  doi: https://doi.org/10.1186/s13059-022-02755-2
+  journal: "Genome Biology"
+  month: 9
+  issue: 1
+  volume: 23
+  year: 2022
