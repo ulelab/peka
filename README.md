@@ -4,11 +4,12 @@
 
 Positionally-enriched k-mer analysis (PEKA) is a software package for identifying enriched protein-RNA binding motifs from CLIP datasets. PEKA compares k-mer enrichment in proximity of high-confidence crosslink sites (tXn - thresholded crosslinks), located within crosslinking peaks and having a high cDNA count, relative to low-count crosslink sites located outside of peaks (oXn - outside crosslinks). This approach reduces the effects of technical biases, such as uridine-preference of UV crosslinking. Each k-mer is assigned a PEKA score, which is used to rank the k-mers from the most to the least enriched. Additionally, PEKA provides comprehensive visualisations of motif enrichment profiles around the high-confidence crosslink sites and clusters the motifs that display similar profiles. PEKA also enables motif discovery within specific transcriptomic regions, including or excluding repetitive elements.
 
-To interactively explore PEKA applied to all ENCODE eCLIP data, visit [iMaps](https://imaps.goodwright.org/apps/peka/).
-For a more detailed description of PEKA method please refer to our preprint https://www.biorxiv.org/content/10.1101/2021.12.07.471544v1.
+To interactively explore PEKA applied to all ENCODE eCLIP data, visit [flow.bio](https://app.flow.bio/peka/).
+For a more detailed description of PEKA method please refer to our paper:
 
-Author: aram.amalietti@gmail.com
+_Kuret, K., Amalietti, A.G., Jones, D.M. et al. Positional motif analysis reveals the extent of specificity of protein-RNA interactions observed by CLIP. Genome Biol 23, 191 (2022). https://doi.org/10.1186/s13059-022-02755-2._
 
+Authors of PEKA source code: aram.amalietti@gmail.com, klara.kuret@ki.si
 
 ## Dependencies:
 ```
@@ -26,20 +27,17 @@ textdistance
 
 ## Set up
 
-We recommend running PEKA in a conda environment so all the dependencies are managed for you, to set this up run the following command from your PEKA directory:
+We recommend running PEKA in a conda environment so all the dependencies are managed for you, to set this up run download the environment file and follow the steps below:
 ```
+# Create the environmnet
 conda env create -f environment.yml
-```
-Before you run PEKA, activate your environment:
-```
-conda activate peka
-```
 
-You may then install PEKA to the environment with the command:
+# Activate the environment
+conda activate peka
+
+# Install the latest version of PEKA from the main branch
+pip install git+https://github.com/ulelab/peka@main
 ```
-python -m pip install . -vv --ignore-installed --no-deps
-```
-This command is also useful for installing development versions of PEKA.
 
 ## Usage
 ```
@@ -194,7 +192,7 @@ Other outputs:
 - A tsv file with saved run parameters
 
 ## Plotting k-mer relative occurrences in heatmap format (preprint)
-To produce k-mer relative occurrence heatmaps as shown in Figure 1g of our preprint https://www.biorxiv.org/content/10.1101/2021.12.07.471544v1, 
+To produce k-mer relative occurrence heatmaps as shown in Figure 1g of our paper https://doi.org/10.1186/s13059-022-02755-2,
 use the script plotRelativeOccurrenceHeatmap.py in peka environment as follows:
 ```
 # Example of run command
