@@ -393,7 +393,14 @@ def cut_per_chrom(chrom, df_p, df_m, df_peaks_p, df_peaks_m):
     interval_index_m = pd.IntervalIndex.from_arrays(left_m, right_m, closed="left")
     df_xl_p["cut"] = pd.cut(df_xl_p["start"], interval_index_p)
     df_xl_m["cut"] = pd.cut(df_xl_m["start"], interval_index_m)
-    return pd.concat([df_xl_p, df_xl_m], ignore_index=True)
+    # Check for empty dataframes before concatenating, return non-empty or merged
+    # At least one of the two dataframes is not empty, because cut_sites_with_region checks that there's a match in chromosome names in site file and regions file
+    if df_xl_p.empty:
+        return df_xl_m
+    elif df_xl_m.empty:
+        return df_xl_p
+    else:
+        return pd.concat([df_xl_p, df_xl_m], ignore_index=True)
 
 
 def cut_sites_with_region(df_sites, df_region):
@@ -406,14 +413,16 @@ def cut_sites_with_region(df_sites, df_region):
     df_region_m = df_region[df_region["strand"] == "-"].copy()
     dfs = []
     cols = ["chrom", "start", "end", "name", "score", "strand", "feature", "attributes", "cut"]
-    for chrom in set(df_region["chrom"].values):
-        df_temp = cut_per_chrom(chrom, df_p, df_m, df_region_p, df_region_m)
-        dfs.append(df_temp[cols])
+    sites_chroms = df_sites["chrom"].unique()
+    for chrom in sorted(df_region["chrom"].unique()):
+        if chrom in sites_chroms:
+            df_temp = cut_per_chrom(chrom, df_p, df_m, df_region_p, df_region_m)
+            dfs.append(df_temp[cols])
     df_cut = pd.concat(dfs, ignore_index=True)
     return df_cut.dropna(axis=0)
 
 
-def percentile_filter_xlinks(df_in, percentile=0.7):
+def percentile_filter_xlinks(df_in, percentile):
     """Calculate threshold and filter sites by it."""
     df_in["cut"] = df_in["cut"].astype(str)
     # Calculate quantiles for each group in 'cut' for the 'score' column
@@ -452,7 +461,7 @@ def intersect_merge_info(region, s_file):
     return df_1
 
 
-def get_threshold_sites(s_file, percentile=0.7):
+def get_threshold_sites(s_file, percentile):
     """Apply crosslink filtering based on dynamical thresholds.
 
     Regions for thresholds are defined as follows: introns and
