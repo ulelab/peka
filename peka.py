@@ -1082,7 +1082,7 @@ def run(peak_file,
         if len(regs_list) >= 1:
             print(region, 'is represented by these annotated features:', regs_list)
         else:
-            print(f'features corresponding to {region} were not found in regions gtf file. Skipping {intron}.')
+            print(f'features corresponding to {region} were not found in regions gtf file. Skipping {region}.')
             continue
         print(f"{len(df_sites)} passing foreground threshold on {region}")
         # Exit for less than 100 tXn
